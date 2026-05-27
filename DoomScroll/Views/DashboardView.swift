@@ -137,7 +137,7 @@ struct DashboardView: View {
     private var streakCard: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "flame.fill")
-                .font(.title2)
+                .font(DS.Font.title2)
                 .foregroundStyle(DS.Color.accent)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -213,7 +213,7 @@ struct DashboardView: View {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(DS.Color.accent)
-                        .font(.title3)
+                        .font(DS.Font.title2)
                 }
                 .familyActivityPicker(isPresented: $showAppPicker, selection: $selection)
                 .onChange(of: selection) { _, newValue in

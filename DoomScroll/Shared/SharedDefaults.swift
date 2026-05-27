@@ -13,6 +13,21 @@ enum SharedDefaults {
         static let overrideLog = "overrideLog"       // [String: [Date]] appToken -> override timestamps
         static let shieldState = "shieldState"        // [String: ShieldConversationState]
         static let dailyBudgets = "dailyBudgets"      // [String: TimeInterval] appToken -> seconds
+        // Widget-readable snapshot keys (written by the main app, read by the widget)
+        static let currentStreak = "currentStreak"
+        static let reclaimedPercent = "reclaimedPercent"
+        static let overridesLeftTotal = "overridesLeftTotal"
+    }
+
+    // Writes the widget snapshot. Call from the main app whenever stats change.
+    static func updateWidgetSnapshot(streak: Int, reclaimedPercent: Int, overridesLeft: Int) {
+        store.set(streak, forKey: Key.currentStreak)
+        store.set(reclaimedPercent, forKey: Key.reclaimedPercent)
+        store.set(overridesLeft, forKey: Key.overridesLeftTotal)
+        // Tell WidgetKit to reload the timeline so the widget reflects new data.
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
     }
 }
 

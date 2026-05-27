@@ -9,12 +9,13 @@ struct OnboardingView: View {
     @State private var showAppPicker = false
     @State private var selection = FamilyActivitySelection()
     @State private var step = 0
+    @State private var mascotExpression: SquareEyesExpression = .idle
 
     private let currentYear = Calendar.current.component(.year, from: Date())
 
     var body: some View {
         ZStack {
-            Color(red: 0.05, green: 0.05, blue: 0.1).ignoresSafeArea()
+            DS.Color.background.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 progressBar
@@ -29,79 +30,96 @@ struct OnboardingView: View {
                 .animation(.easeInOut, value: step)
             }
         }
-        .foregroundStyle(.white)
     }
 
+    // MARK: - Progress
+
     private var progressBar: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: DS.Spacing.xs) {
             ForEach(0..<4) { i in
                 Capsule()
-                    .fill(i <= step ? Color.white : Color.white.opacity(0.2))
-                    .frame(height: 3)
+                    .fill(i <= step ? DS.Color.accent : DS.Color.backgroundMuted)
+                    .frame(height: 4)
                     .animation(.easeInOut, value: step)
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 16)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.md)
     }
 
+    // MARK: - Steps
+
     private var welcomeStep: some View {
-        VStack(alignment: .leading, spacing: 32) {
-            Spacer()
-            Text("Your time is the only thing you can't get more of.")
-                .font(.largeTitle.weight(.bold))
-                .lineSpacing(4)
-
-            Text("DoomScroll helps you scroll less — not by blocking you, but by making sure you actually chose to open that app.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .lineSpacing(4)
-
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             Spacer()
 
-            Button("Let's go") { step = 1 }
-                .buttonStyle(PrimaryButtonStyle())
+            HStack {
+                Spacer()
+                SquareEyesView(expression: .concerned, size: 110)
+                Spacer()
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                Text("My eyes got this way from too much screen time.")
+                    .font(DS.Font.title)
+                    .foregroundStyle(DS.Color.textPrimary)
+                    .lineSpacing(4)
+
+                Text("Let's make sure yours don't.")
+                    .font(DS.Font.title)
+                    .foregroundStyle(DS.Color.accent)
+                    .lineSpacing(4)
+            }
+
+            Text("DoomScroll creates friction before you open time-sink apps — not a hard block, just a moment to make sure you actually mean it.")
+                .font(DS.Font.body)
+                .foregroundStyle(DS.Color.textSecondary)
+                .lineSpacing(4)
+
+            Spacer()
+
+            DSPrimaryButton(label: "Let's go") { advance(to: 1, mascot: .idle) }
         }
-        .padding(32)
+        .padding(DS.Spacing.xl)
     }
 
     private var profileStep: some View {
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             Spacer()
 
-            Text("A bit about you")
-                .font(.title.weight(.bold))
+            mascotRow(expression: mascotExpression,
+                      text: "This stays on your device. It helps me speak to you like a person, not an app.")
 
-            Text("This stays on your device. It helps DoomScroll speak to you like a person, not an app.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-
-            VStack(alignment: .leading, spacing: 16) {
-                label("Birth year")
+            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                formLabel("Birth year")
                 Picker("Birth year", selection: $birthYear) {
                     ForEach((1940...currentYear - 10).reversed(), id: \.self) { year in
                         Text(String(year)).tag(year)
                     }
                 }
                 .pickerStyle(.wheel)
-                .frame(height: 120)
-                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+                .frame(height: 110)
+                .background(DS.Color.backgroundMuted, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
 
-                label("Gender")
+                formLabel("Gender")
                 Picker("Gender", selection: $gender) {
                     ForEach(UserProfile.Gender.allCases, id: \.self) { g in
                         Text(g.displayName).tag(g)
                     }
                 }
                 .pickerStyle(.segmented)
+                .tint(DS.Color.accent)
 
-                label("Life expectancy (years)")
+                formLabel("Life expectancy (years)")
                 HStack {
                     Slider(value: Binding(
                         get: { Double(lifeExpectancy) },
                         set: { lifeExpectancy = Int($0) }
                     ), in: 60...100, step: 1)
+                    .tint(DS.Color.accent)
                     Text("\(lifeExpectancy)")
+                        .font(DS.Font.headline)
+                        .foregroundStyle(DS.Color.textPrimary)
                         .monospacedDigit()
                         .frame(width: 36)
                 }
@@ -109,112 +127,150 @@ struct OnboardingView: View {
 
             Spacer()
 
-            Button("Continue") { step = 2 }
-                .buttonStyle(PrimaryButtonStyle())
+            DSPrimaryButton(label: "Continue") { advance(to: 2, mascot: .happy) }
         }
-        .padding(32)
+        .padding(DS.Spacing.xl)
     }
 
     private var appPickerStep: some View {
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             Spacer()
 
-            Text("Which apps do you want to slow down?")
-                .font(.title.weight(.bold))
-
-            Text("These will get the friction treatment — you can still open them, but you'll have to mean it.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-
-            Spacer()
+            mascotRow(expression: .idle,
+                      text: "Which apps do you want to slow down? You can still open them — you'll just have to mean it.")
 
             Button {
                 showAppPicker = true
             } label: {
-                HStack {
+                HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "apps.iphone")
-                    Text(selection.applications.isEmpty ? "Choose apps" : "\(selection.applications.count) app\(selection.applications.count == 1 ? "" : "s") selected")
+                        .foregroundStyle(DS.Color.accent)
+                    Text(selection.applications.isEmpty
+                         ? "Choose apps"
+                         : "\(selection.applications.count) app\(selection.applications.count == 1 ? "" : "s") selected")
+                        .font(DS.Font.headline)
+                        .foregroundStyle(DS.Color.textPrimary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(DS.Color.textTertiary)
+                        .font(DS.Font.caption)
                 }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
+                .padding(DS.Spacing.md)
+                .background(DS.Color.backgroundCard, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+                .shadow(color: DS.Color.textPrimary.opacity(0.05), radius: 6, x: 0, y: 2)
             }
             .familyActivityPicker(isPresented: $showAppPicker, selection: $selection)
 
             Spacer()
 
-            Button("Continue") { step = 3 }
-                .disabled(selection.applications.isEmpty)
-                .buttonStyle(PrimaryButtonStyle())
+            DSPrimaryButton(label: "Continue", disabled: selection.applications.isEmpty) {
+                advance(to: 3, mascot: .happy)
+            }
         }
-        .padding(32)
+        .padding(DS.Spacing.xl)
     }
 
     private var summaryStep: some View {
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             Spacer()
 
+            HStack {
+                Spacer()
+                SquareEyesView(expression: .proud, size: 100)
+                Spacer()
+            }
+
             Text("You're set up.")
-                .font(.title.weight(.bold))
+                .font(DS.Font.title)
+                .foregroundStyle(DS.Color.textPrimary)
 
             let age = currentYear - birthYear
             let yearsLeft = max(0, lifeExpectancy - age)
 
-            VStack(alignment: .leading, spacing: 12) {
-                impactRow(icon: "clock", text: "~\(yearsLeft) years of screen time ahead")
-                impactRow(icon: "hand.raised", text: "2 override conversations per app per day")
-                impactRow(icon: "lock.shield", text: "\(selection.applications.count) app\(selection.applications.count == 1 ? "" : "s") will have friction")
+            VStack(spacing: DS.Spacing.sm) {
+                summaryRow(icon: "hourglass", text: "~\(yearsLeft) years of screen time ahead to reclaim")
+                summaryRow(icon: "hand.raised",  text: "2 override conversations per app per day")
+                summaryRow(icon: "lock.shield",  text: "\(selection.applications.count) app\(selection.applications.count == 1 ? "" : "s") with friction enabled")
             }
-            .padding()
-            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 16))
+            .padding(DS.Spacing.md)
+            .background(DS.Color.backgroundCard, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+            .shadow(color: DS.Color.textPrimary.opacity(0.05), radius: 6, x: 0, y: 2)
 
             Spacer()
 
-            Button("Start") { finishOnboarding() }
-                .buttonStyle(PrimaryButtonStyle())
+            DSPrimaryButton(label: "Start my 14-day trial") { finishOnboarding() }
         }
-        .padding(32)
+        .padding(DS.Spacing.xl)
     }
 
-    private func impactRow(icon: String, text: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .frame(width: 24)
-                .foregroundStyle(.secondary)
+    // MARK: - Components
+
+    private func mascotRow(expression: SquareEyesExpression, text: String) -> some View {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            SquareEyesView(expression: expression, size: 56)
             Text(text)
-                .font(.callout)
+                .font(DS.Font.callout)
+                .foregroundStyle(DS.Color.textSecondary)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Color.backgroundCard, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .shadow(color: DS.Color.textPrimary.opacity(0.05), radius: 6, x: 0, y: 2)
+    }
+
+    private func summaryRow(icon: String, text: String) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: icon)
+                .foregroundStyle(DS.Color.accent)
+                .frame(width: 20)
+            Text(text)
+                .font(DS.Font.callout)
+                .foregroundStyle(DS.Color.textPrimary)
         }
     }
 
-    private func label(_ text: String) -> some View {
-        Text(text)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .textCase(.uppercase)
-            .kerning(0.5)
+    private func formLabel(_ text: String) -> some View {
+        SectionLabel(text: text)
+    }
+
+    // MARK: - Actions
+
+    private func advance(to newStep: Int, mascot: SquareEyesExpression) {
+        withAnimation {
+            step = newStep
+            mascotExpression = mascot
+        }
     }
 
     private func finishOnboarding() {
         let profile = UserProfile(birthYear: birthYear, gender: gender, lifeExpectancy: lifeExpectancy)
         profile.save()
-
-        // Apply shields via ManagedSettings.
         AppBlocker.apply(selection: selection)
         ActivityMonitorScheduler.startMonitoring(shieldedApps: selection.applications)
     }
 }
 
-struct PrimaryButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) var isEnabled
+// MARK: - Shared button style
 
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(isEnabled ? Color.white : Color.white.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
-            .foregroundStyle(isEnabled ? Color(red: 0.05, green: 0.05, blue: 0.1) : .gray)
-            .font(.body.weight(.semibold))
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+struct DSPrimaryButton: View {
+    let label: String
+    var disabled: Bool = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(DS.Font.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.md)
+                .background(
+                    disabled ? DS.Color.backgroundMuted : DS.Color.accent,
+                    in: RoundedRectangle(cornerRadius: DS.Radius.md)
+                )
+                .foregroundStyle(disabled ? DS.Color.textTertiary : .white)
+        }
+        .disabled(disabled)
+        .buttonStyle(.plain)
     }
 }

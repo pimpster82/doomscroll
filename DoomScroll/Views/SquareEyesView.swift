@@ -20,6 +20,7 @@ enum SquareEyesExpression: Equatable {
 struct SquareEyesView: View {
     var expression: SquareEyesExpression = .idle
     var size: CGFloat = 120    // Width; height is 1.16× width
+    var animated: Bool = true  // false for WidgetKit snapshots
 
     // Idle breathing animation
     @State private var breathingOffset: CGFloat = 0
@@ -125,6 +126,7 @@ struct SquareEyesView: View {
         }
         .frame(width: size * 1.4, height: height + size * 0.15)
         .onAppear {
+            guard animated else { return }
             startBreathing()
             startBlinking()
         }

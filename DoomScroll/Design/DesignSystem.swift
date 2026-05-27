@@ -96,6 +96,35 @@ extension SwiftUI.Color {
     }
 }
 
+// MARK: - UIColor equivalents (for extensions that use UIKit, e.g. ShieldConfigurationExtension)
+
+extension UIColor {
+    static let dsBackground      = UIColor(hex: "FDF5EB")
+    static let dsBackgroundCard  = UIColor(hex: "FFFFFF")
+    static let dsTextPrimary     = UIColor(hex: "1E1B2E")
+    static let dsTextSecondary   = UIColor(hex: "6B6580")
+    static let dsAccent          = UIColor(hex: "F58B44")
+    static let dsSuccess         = UIColor(hex: "4CAF6F")
+    static let dsWarning         = UIColor(hex: "F5C144")
+    static let dsTeal            = UIColor(hex: "52B6DE")
+    // Shield overlay palette — dark by design (overlays on apps)
+    static let dsShieldBg        = UIColor(hex: "1E1B2E")
+    static let dsShieldButton    = UIColor(hex: "2E2A42")
+    static let dsShieldCommit    = UIColor(hex: "1E3A28")
+
+    convenience init(hex: String) {
+        let h = hex.trimmingCharacters(in: .init(charactersIn: "#"))
+        var rgb: UInt64 = 0
+        Scanner(string: h).scanHexInt64(&rgb)
+        self.init(
+            red:   CGFloat((rgb >> 16) & 0xFF) / 255,
+            green: CGFloat((rgb >> 8)  & 0xFF) / 255,
+            blue:  CGFloat( rgb        & 0xFF) / 255,
+            alpha: 1
+        )
+    }
+}
+
 // Card container matching the design system.
 struct DSCard<Content: View>: View {
     let content: Content

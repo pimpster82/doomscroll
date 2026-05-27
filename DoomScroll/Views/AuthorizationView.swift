@@ -5,39 +5,58 @@ struct AuthorizationView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.05, green: 0.05, blue: 0.1).ignoresSafeArea()
+            DS.Color.background.ignoresSafeArea()
 
-            VStack(spacing: 32) {
+            VStack(spacing: DS.Spacing.xl) {
                 Spacer()
 
-                Image(systemName: "hourglass.circle")
-                    .font(.system(size: 64))
-                    .foregroundStyle(.white.opacity(0.8))
+                SquareEyesView(expression: .concerned, size: 120)
 
-                VStack(spacing: 12) {
-                    Text("DoomScroll needs one permission")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.white)
+                VStack(spacing: DS.Spacing.md) {
+                    Text("One permission to get started")
+                        .font(DS.Font.title)
+                        .foregroundStyle(DS.Color.textPrimary)
                         .multilineTextAlignment(.center)
 
                     Text("Screen Time access lets DoomScroll track which apps you use and apply friction when you open them. Nothing leaves your device.")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
+                        .font(DS.Font.body)
+                        .foregroundStyle(DS.Color.textSecondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
                 }
+                .padding(.horizontal, DS.Spacing.md)
+
+                VStack(spacing: DS.Spacing.sm) {
+                    permissionRow(icon: "eye.slash",    text: "No data leaves your device")
+                    permissionRow(icon: "person.slash", text: "No account required")
+                    permissionRow(icon: "lock.shield",  text: "Restrictions you set, not Apple's")
+                }
+                .padding(DS.Spacing.md)
+                .background(DS.Color.backgroundCard, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+                .shadow(color: DS.Color.textPrimary.opacity(0.05), radius: 6, x: 0, y: 2)
+                .padding(.horizontal, DS.Spacing.lg)
 
                 Spacer()
 
-                Button("Grant permission") {
+                DSPrimaryButton(label: "Grant Screen Time access") {
                     Task { await authManager.requestAuthorization() }
                 }
-                .buttonStyle(PrimaryButtonStyle())
-                .padding(.horizontal, 32)
-                .padding(.bottom, 40)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.xl)
             }
-            .padding(32)
+            .padding(DS.Spacing.lg)
         }
-        .preferredColorScheme(.dark)
+    }
+
+    private func permissionRow(icon: String, text: String) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: icon)
+                .foregroundStyle(DS.Color.accent)
+                .frame(width: 20)
+            Text(text)
+                .font(DS.Font.callout)
+                .foregroundStyle(DS.Color.textPrimary)
+            Spacer()
+        }
     }
 }

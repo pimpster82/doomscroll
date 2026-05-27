@@ -3,8 +3,8 @@ import ManagedSettingsUI
 import UIKit
 import Foundation
 
-// Renders the shield overlay UI for each conversation step.
-// Called by the OS whenever the shield needs to display or refresh (after .defer).
+// Shield overlay is intentionally dark — it sits on top of apps and must read as
+// a distinct interruption. DS.Color.shieldBg (#1E1B2E warm indigo) is used throughout.
 class ShieldConfigurationExtension: ShieldConfigurationDataSource {
 
     override func configuration(shielding application: Application) -> ShieldConfiguration {
@@ -14,23 +14,21 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
         let appName = application.localizedDisplayName ?? "this app"
         let overridesLeft = OverrideTracker.remainingToday(for: tokenString)
 
-        return configuration(
-            step: state.step,
-            appName: appName,
-            profile: profile,
-            overridesLeft: overridesLeft,
-            tokenString: tokenString
-        )
+        return configuration(step: state.step, appName: appName, profile: profile,
+                             overridesLeft: overridesLeft, tokenString: tokenString)
     }
 
-    override func configuration(shielding application: Application, in context: ActivityCategory) -> ShieldConfiguration {
+    override func configuration(shielding application: Application,
+                                in context: ActivityCategory) -> ShieldConfiguration {
         configuration(shielding: application)
     }
 
     override func configuration(shielding webDomain: WebDomain) -> ShieldConfiguration {
         ShieldConfiguration(
             backgroundBlurStyle: .systemMaterialDark,
-            title: ShieldConfiguration.Label(text: "Take a breath.", color: .white)
+            backgroundColor: .dsShieldBg,
+            title: ShieldConfiguration.Label(text: "Take a breath.", color: .white),
+            subtitle: ShieldConfiguration.Label(text: "This site is on your friction list.", color: UIColor.dsTextSecondary)
         )
     }
 
@@ -44,51 +42,53 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
         tokenString: String
     ) -> ShieldConfiguration {
         switch step {
-        case .impact:
-            return impactScreen(appName: appName, profile: profile, overridesLeft: overridesLeft, tokenString: tokenString)
-        case .reflection:
-            return reflectionScreen(appName: appName, profile: profile)
-        case .commit:
-            return commitScreen(appName: appName, overridesLeft: overridesLeft)
+        case .impact:    return impactScreen(appName: appName, profile: profile, overridesLeft: overridesLeft, tokenString: tokenString)
+        case .reflection: return reflectionScreen(appName: appName, profile: profile)
+        case .commit:    return commitScreen(appName: appName, overridesLeft: overridesLeft)
         }
     }
 
-    // Step 1: Show today's usage and a near-term relational stake.
-    private func impactScreen(appName: String, profile: UserProfile?, overridesLeft: Int, tokenString: String) -> ShieldConfiguration {
+    // Step 1: Today's time + near-term relational stake (positive framing, no shame).
+    private func impactScreen(appName: String, profile: UserProfile?, overridesLeft: Int,
+                               tokenString: String) -> ShieldConfiguration {
         let todaySeconds = fetchTodaySeconds(tokenString: tokenString)
         let minutes = max(0, Int(todaySeconds / 60))
 
         let stake: String
         if let profile {
-            let calculator = LifetimeImpactCalculator(profile: profile)
-            stake = calculator.appImpact(appName: appName, todaySeconds: todaySeconds, weeklyTotalSeconds: todaySeconds * 5).relationalStake
+            let calc = LifetimeImpactCalculator(profile: profile)
+            stake = calc.appImpact(appName: appName, todaySeconds: todaySeconds,
+                                   weeklyTotalSeconds: todaySeconds * 5).relationalStake
         } else {
-            stake = minutes > 0 ? "You've spent \(minutes) min on \(appName) today." : "Pausing before you open \(appName)."
+            stake = minutes > 0
+                ? "You've spent \(minutes) min on \(appName) today."
+                : "Taking a breath before \(appName)."
         }
 
-        let overrideLabel = overridesLeft == 2 ? "Open it anyway" :
-                            overridesLeft == 1 ? "Open it (last override today)" :
-                            "No overrides left today"
+        let canOverride = overridesLeft > 0
+        let overrideText = overridesLeft == 2 ? "Open it anyway →" :
+                           overridesLeft == 1 ? "Open it (last override today) →" :
+                           "No overrides left today"
 
         return ShieldConfiguration(
             backgroundBlurStyle: .systemMaterialDark,
-            backgroundColor: UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1),
+            backgroundColor: .dsShieldBg,
             icon: UIImage(systemName: "hourglass"),
             title: ShieldConfiguration.Label(text: stake, color: .white),
             subtitle: ShieldConfiguration.Label(
                 text: "\(overridesLeft) override\(overridesLeft == 1 ? "" : "s") left today",
-                color: UIColor.systemGray2
+                color: .dsTextSecondary
             ),
             primaryButtonLabel: ShieldConfiguration.Label(
-                text: overridesLeft > 0 ? "Keep going →" : "Stay blocked",
-                color: overridesLeft > 0 ? .white : UIColor.systemGray
+                text: canOverride ? overrideText : "Stay closed",
+                color: canOverride ? .white : UIColor.systemGray
             ),
-            primaryButtonBackgroundColor: overridesLeft > 0 ? UIColor(red: 0.2, green: 0.2, blue: 0.3, alpha: 1) : UIColor.systemGray5,
-            secondaryButtonLabel: ShieldConfiguration.Label(text: "Not right now", color: UIColor.systemGray2)
+            primaryButtonBackgroundColor: canOverride ? .dsShieldButton : UIColor.systemGray5,
+            secondaryButtonLabel: ShieldConfiguration.Label(text: "Not right now", color: .dsTextSecondary)
         )
     }
 
-    // Step 2: Age/gender-adapted reflective question.
+    // Step 2: Age/gender-adapted reflective question (non-judgmental, curious tone).
     private func reflectionScreen(appName: String, profile: UserProfile?) -> ShieldConfiguration {
         let prompt: ReflectionEngine.Prompt
         if let profile {
@@ -103,44 +103,37 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
 
         return ShieldConfiguration(
             backgroundBlurStyle: .systemMaterialDark,
-            backgroundColor: UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1),
+            backgroundColor: .dsShieldBg,
             icon: UIImage(systemName: "bubble.left"),
             title: ShieldConfiguration.Label(text: prompt.question, color: .white),
-            subtitle: ShieldConfiguration.Label(text: prompt.hint, color: UIColor.systemGray2),
+            subtitle: ShieldConfiguration.Label(text: prompt.hint, color: .dsTextSecondary),
             primaryButtonLabel: ShieldConfiguration.Label(text: prompt.continueLabel, color: .white),
-            primaryButtonBackgroundColor: UIColor(red: 0.2, green: 0.2, blue: 0.3, alpha: 1),
-            secondaryButtonLabel: ShieldConfiguration.Label(text: "Actually, never mind", color: UIColor.systemGray2)
+            primaryButtonBackgroundColor: .dsShieldButton,
+            secondaryButtonLabel: ShieldConfiguration.Label(text: "Actually, never mind", color: .dsTextSecondary)
         )
     }
 
-    // Step 3: Commit to a session time limit.
+    // Step 3: Commit to a session limit. Green accent signals positive choice, not a warning.
     private func commitScreen(appName: String, overridesLeft: Int) -> ShieldConfiguration {
+        let overridesAfter = max(0, overridesLeft - 1)
         ShieldConfiguration(
             backgroundBlurStyle: .systemMaterialDark,
-            backgroundColor: UIColor(red: 0.05, green: 0.05, blue: 0.1, alpha: 1),
+            backgroundColor: .dsShieldBg,
             icon: UIImage(systemName: "timer"),
-            title: ShieldConfiguration.Label(
-                text: "Set your limit for this session.",
-                color: .white
-            ),
+            title: ShieldConfiguration.Label(text: "Set your limit for this session.", color: .white),
             subtitle: ShieldConfiguration.Label(
-                // The actual time picker lives in the main app; the shield approximates
-                // this by opening 15-min sessions. A deeper integration requires
-                // the workaround notification tap -> main app -> return flow.
-                text: "15 minutes, then \(appName) locks again. You'll have \(max(0, overridesLeft - 1)) override\(overridesLeft - 1 == 1 ? "" : "s") left today.",
-                color: UIColor.systemGray2
+                text: "15 minutes, then \(appName) locks again. \(overridesAfter) override\(overridesAfter == 1 ? "" : "s") left after this.",
+                color: .dsTextSecondary
             ),
             primaryButtonLabel: ShieldConfiguration.Label(text: "Start 15-min session", color: .white),
-            primaryButtonBackgroundColor: UIColor(red: 0.15, green: 0.35, blue: 0.15, alpha: 1),
-            secondaryButtonLabel: ShieldConfiguration.Label(text: "Stay closed", color: UIColor.systemGray2)
+            primaryButtonBackgroundColor: .dsShieldCommit,
+            secondaryButtonLabel: ShieldConfiguration.Label(text: "Stay closed", color: .dsTextSecondary)
         )
     }
 
     // MARK: - Usage data
 
     private func fetchTodaySeconds(tokenString: String) -> TimeInterval {
-        // DeviceActivity data is fetched by the monitor extension and stored in shared defaults.
-        let key = "todaySeconds_" + tokenString
-        return SharedDefaults.store.double(forKey: key)
+        SharedDefaults.store.double(forKey: "todaySeconds_\(tokenString)")
     }
 }

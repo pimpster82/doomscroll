@@ -32,6 +32,7 @@ targets:
       - target: ShieldConfigurationExtension
       - target: ShieldActionExtension
       - target: DeviceActivityMonitorExtension
+      - target: DoomScrollWidget
 
   ShieldConfigurationExtension:
     type: app-extension
@@ -62,6 +63,27 @@ targets:
       path: ShieldActionExtension/ShieldAction.entitlements
       properties:
         com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.doomscroll
+
+  DoomScrollWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - DoomScrollWidget
+      # Widget needs access to shared model types
+      - path: DoomScroll/Design/DesignSystem.swift
+      - path: DoomScroll/Views/SquareEyesView.swift
+      - path: DoomScroll/Shared/SharedDefaults.swift
+      - path: DoomScroll/Models/UserProfile.swift
+      - path: DoomScroll/Models/OverrideTracker.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.doomscroll.app.Widget
+        INFOPLIST_FILE: DoomScrollWidget/Info.plist
+    entitlements:
+      path: DoomScrollWidget/DoomScrollWidget.entitlements
+      properties:
         com.apple.security.application-groups:
           - group.com.doomscroll
 
