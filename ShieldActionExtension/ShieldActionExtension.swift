@@ -39,9 +39,10 @@ class ShieldActionExtension: ShieldActionDelegate {
         case .impact:
             // User acknowledged the impact screen — move to reflection.
             guard OverrideTracker.canOverride(for: tokenString) else {
-                // No overrides left today; keep blocked.
+                // No overrides left today. .close dismisses the shield and keeps the app blocked.
+                // .defer would re-invoke ShieldConfigurationDataSource and flicker the shield.
                 resetState(tokenString: tokenString)
-                completionHandler(.defer)
+                completionHandler(.close)
                 return
             }
             state.step = .reflection
@@ -50,12 +51,14 @@ class ShieldActionExtension: ShieldActionDelegate {
 
         case .reflection:
             // User answered (or skipped) the reflection — move to commit.
+            // Write the session budget now so scheduleBudgetReblock fires correctly.
             state.step = .commit
+            state.sessionBudgetSeconds = 900   // 15-minute session; hardcoded until UI picker is wired
             state.save(for: tokenString)
             completionHandler(.defer)
 
         case .commit:
-            // User has set their time limit and confirmed. Record override and open.
+            // User confirmed. Record override, schedule re-shield, open the app.
             OverrideTracker.recordOverride(for: tokenString)
             scheduleBudgetReblock(tokenString: tokenString, seconds: state.sessionBudgetSeconds)
             resetState(tokenString: tokenString)
