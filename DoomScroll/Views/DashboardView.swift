@@ -13,7 +13,8 @@ struct DashboardView: View {
     @State private var showPaywall = false
     @State private var showFocusMode = false
     @State private var mascotExpression: SquareEyesExpression = .idle
-    @State private var streak = 3   // TODO: persist and increment from DeviceActivity
+    @State private var streak = 0
+    @State private var bestStreak = 0
 
     private var profile: UserProfile? { UserProfile.load() }
     private var greeting: String {
@@ -47,7 +48,7 @@ struct DashboardView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
-            .onAppear { loadImpact(); updateMascot() }
+            .onAppear { loadImpact(); loadStreak(); updateMascot(); pushWidgetSnapshot() }
         }
         .sheet(isPresented: $showPaywall) {
             NavigationStack { PaywallView() }
@@ -156,7 +157,9 @@ struct DashboardView: View {
                 Text("\(streak) day streak")
                     .font(DS.Font.headline)
                     .foregroundStyle(DS.Color.textPrimary)
-                Text("Keep going — your best is \(max(streak, 7)) days")
+                Text(bestStreak > streak
+                 ? "Your best: \(bestStreak) days — keep going"
+                 : streak > 0 ? "Personal best — keep it up!" : "Start your streak today")
                     .font(DS.Font.caption)
                     .foregroundStyle(DS.Color.textSecondary)
             }
@@ -280,19 +283,33 @@ struct DashboardView: View {
     // MARK: - Helpers
 
     private var reclaimedFraction: CGFloat {
-        // Placeholder: in production, compare today's usage vs. 7-day average.
+        // Placeholder until DeviceActivity usage tracking is implemented (TODO #25).
         0.62
     }
 
     private var overridesUsedToday: Int {
-        // Aggregate across all shielded apps.
-        0
+        OverrideTracker.totalOverridesToday()
     }
 
     private func loadImpact() {
         guard let profile else { return }
         let estimatedAnnualSeconds: TimeInterval = 3 * 3600 * 365
         impact = LifetimeImpactCalculator(profile: profile).calculate(totalSecondsLastYear: estimatedAnnualSeconds)
+    }
+
+    private func loadStreak() {
+        streak = OverrideTracker.currentStreak()
+        bestStreak = OverrideTracker.bestStreak()
+    }
+
+    private func pushWidgetSnapshot() {
+        let totalManaged = 2  // Each managed app gets maxOverridesPerDay; placeholder until token list is accessible
+        let overridesLeft = max(0, OverrideTracker.maxOverridesPerDay * totalManaged - OverrideTracker.totalOverridesToday())
+        SharedDefaults.updateWidgetSnapshot(
+            streak: streak,
+            reclaimedPercent: Int(reclaimedFraction * 100),
+            overridesLeft: overridesLeft
+        )
     }
 
     private func updateMascot() {

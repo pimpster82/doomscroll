@@ -34,9 +34,9 @@ struct DoomScrollProvider: TimelineProvider {
     // MARK: - Entry construction
 
     private func currentEntry() -> DoomScrollEntry {
-        let streak = SharedDefaults.store.integer(forKey: "currentStreak")
-        let reclaimed = SharedDefaults.store.integer(forKey: "reclaimedPercent")
-        let overridesLeft = SharedDefaults.store.integer(forKey: "overridesLeftTotal")
+        let streak = SharedDefaults.store.integer(forKey: SharedDefaults.Key.currentStreak)
+        let reclaimed = SharedDefaults.store.integer(forKey: SharedDefaults.Key.reclaimedPercent)
+        let overridesLeft = SharedDefaults.store.integer(forKey: SharedDefaults.Key.overridesLeftTotal)
 
         let profile = UserProfile.load()
         let stake: String = {
@@ -190,9 +190,9 @@ struct MediumWidgetView: View {
                     }
                 }
 
-                // Override dots
+                // Override dots — total pool across all managed apps (2 apps × 2 overrides = 4 dots)
                 HStack(spacing: DS.Spacing.xs) {
-                    ForEach(0..<4) { i in
+                    ForEach(0..<(OverrideTracker.maxOverridesPerDay * 2), id: \.self) { i in
                         Circle()
                             .fill(i < entry.overridesLeftTotal
                                   ? DS.Color.success

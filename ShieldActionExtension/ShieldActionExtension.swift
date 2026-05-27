@@ -58,8 +58,13 @@ class ShieldActionExtension: ShieldActionDelegate {
             completionHandler(.defer)
 
         case .commit:
-            // User confirmed. Record override, schedule re-shield, open the app.
-            OverrideTracker.recordOverride(for: tokenString)
+            // Atomically record the override. In the rare case a concurrent override
+            // exhausted the limit between the impact check and now, stay blocked.
+            guard OverrideTracker.attemptOverride(for: tokenString) else {
+                resetState(tokenString: tokenString)
+                completionHandler(.close)
+                return
+            }
             scheduleBudgetReblock(tokenString: tokenString, seconds: state.sessionBudgetSeconds)
             resetState(tokenString: tokenString)
             completionHandler(.none)    // .none = allow the app to open

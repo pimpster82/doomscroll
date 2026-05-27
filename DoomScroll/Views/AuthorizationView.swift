@@ -38,8 +38,18 @@ struct AuthorizationView: View {
 
                 Spacer()
 
-                DSPrimaryButton(label: "Grant Screen Time access") {
-                    Task { await authManager.requestAuthorization() }
+                VStack(spacing: DS.Spacing.sm) {
+                    DSPrimaryButton(label: "Grant Screen Time access") {
+                        Task { await authManager.requestAuthorization() }
+                    }
+
+                    if let error = authManager.authorizationError {
+                        Text(error)
+                            .font(DS.Font.caption)
+                            .foregroundStyle(DS.Color.warning)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.md)
+                    }
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.bottom, DS.Spacing.xl)

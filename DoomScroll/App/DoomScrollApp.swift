@@ -25,23 +25,29 @@ struct DoomScrollApp: App {
                     .environmentObject(authManager)
             }
         }
+        // All DS colors are fixed hex values with no dark-adaptive variants.
+        // Force light mode until dark-adaptive Color tokens are added to DesignSystem.
+        .preferredColorScheme(.light)
     }
 }
 
 @MainActor
 class AuthorizationManager: ObservableObject {
     @Published var isAuthorized = false
+    @Published var authorizationError: String? = nil
 
     init() {
         checkAuthorization()
     }
 
     func requestAuthorization() async {
+        authorizationError = nil
         do {
             try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
             isAuthorized = true
         } catch {
             isAuthorized = false
+            authorizationError = "Screen Time permission was denied. Go to Settings → Screen Time to enable it for DoomScroll."
         }
     }
 

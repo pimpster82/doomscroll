@@ -26,6 +26,7 @@ struct SquareEyesView: View {
     @State private var breathingOffset: CGFloat = 0
     @State private var blinkOpen: Bool = true
     @State private var blinkTimer: Timer?
+    @State private var isVisible = false
 
     private var height: CGFloat { size * 1.16 }
     private var eyeSize: CGFloat { size * 0.28 }
@@ -126,11 +127,13 @@ struct SquareEyesView: View {
         }
         .frame(width: size * 1.4, height: height + size * 0.15)
         .onAppear {
+            isVisible = true
             guard animated else { return }
             startBreathing()
             startBlinking()
         }
         .onDisappear {
+            isVisible = false
             blinkTimer?.invalidate()
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.7), value: expression)
@@ -229,10 +232,13 @@ struct SquareEyesView: View {
     }
 
     private func scheduleNextBlink() {
+        guard isVisible else { return }
         let interval = Double.random(in: 2.5...5.5)
         blinkTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { _ in
+            guard isVisible else { return }
             withAnimation(.easeInOut(duration: 0.08)) { blinkOpen = false }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                guard isVisible else { return }
                 withAnimation(.easeInOut(duration: 0.1)) { blinkOpen = true }
                 scheduleNextBlink()
             }

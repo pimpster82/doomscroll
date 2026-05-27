@@ -10,7 +10,8 @@ class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     private let store = ManagedSettingsStore()
 
     override func intervalDidStart(for activity: DeviceActivityName) {
-        // New calendar day — reset daily state.
+        // New calendar day: advance the streak (increments if yesterday had no exhausted overrides).
+        OverrideTracker.advanceStreakForNewDay()
     }
 
     override func intervalDidEnd(for activity: DeviceActivityName) {
@@ -41,7 +42,7 @@ struct ActivityMonitorScheduler {
         let center = DeviceActivityCenter()
         let schedule = DeviceActivitySchedule(
             intervalStart: DateComponents(hour: 0, minute: 0),
-            intervalEnd: DateComponents(hour: 23, minute: 59),
+            intervalEnd: DateComponents(hour: 23, minute: 59, second: 59),
             repeats: true
         )
 

@@ -5,7 +5,7 @@ import StoreKit
 // (so they've had a win and understand the value before being asked to pay).
 // Hard paywall with 14-day free trial; no free tier per conversion data.
 struct PaywallView: View {
-    @StateObject private var manager = SubscriptionManager.shared
+    @ObservedObject private var manager = SubscriptionManager.shared
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedTier: Tier = .family
@@ -178,7 +178,7 @@ struct PaywallView: View {
                 ("arrow.counterclockwise","2 overrides per app, per day"),
                 ("chart.bar.fill",       "Lifetime impact dashboard"),
                 ("person.3.fill",        selectedTier == .family ? "Full family coverage — up to 6 people" : "Personal screen time control"),
-                ("lock.shield.fill",     "FamilyControls — unkillable by the apps"),
+                ("lock.shield.fill",     "System-level blocking — apps can't override it"),
             ]
 
             ForEach(features, id: \.0) { icon, text in
@@ -227,11 +227,14 @@ struct PaywallView: View {
     }
 
     private var footer: some View {
-        VStack(spacing: DS.Spacing.xs) {
-            Text("No charge during the trial. Cancel before it ends and you won't be billed.")
-                .font(DS.Font.caption)
-                .foregroundStyle(DS.Color.textTertiary)
-                .multilineTextAlignment(.center)
+        VStack(spacing: DS.Spacing.sm) {
+            // Required Apple auto-renewal disclosure (App Store guideline 3.1.1)
+            if let product = selectedProduct {
+                Text("Payment of \(product.displayPrice) will be charged to your Apple ID at confirmation of purchase. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Manage or cancel in App Store account settings. Any unused portion of a free trial is forfeited on purchase.")
+                    .font(DS.Font.caption)
+                    .foregroundStyle(DS.Color.textTertiary)
+                    .multilineTextAlignment(.center)
+            }
 
             if selectedTier == .family {
                 Text("Family plan is shared automatically via Apple Family Sharing — no extra steps needed.")

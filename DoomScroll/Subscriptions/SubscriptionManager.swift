@@ -114,6 +114,11 @@ class SubscriptionManager: ObservableObject {
     // MARK: - Entitlements
 
     func refreshEntitlements() async {
+        // Guard against the race where a Transaction.updates event fires before
+        // loadProducts() has resolved — products.first would return nil and the user
+        // would be incorrectly shown as unsubscribed.
+        if products.isEmpty { await loadProducts() }
+
         var found: Product? = nil
         var ownership: Transaction.OwnershipType? = nil
 
@@ -127,6 +132,12 @@ class SubscriptionManager: ObservableObject {
 
         activeSubscription = found
         ownershipType = ownership
+
+        // If the subscription lapsed, remove any active shields so the user
+        // isn't permanently locked out of their own apps.
+        if activeSubscription == nil {
+            AppBlocker.removeAll()
+        }
     }
 
     // MARK: - Transaction listener
