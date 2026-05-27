@@ -4,6 +4,7 @@ import FamilyControls
 @main
 struct DoomScrollApp: App {
     @StateObject private var authManager = AuthorizationManager()
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
 
     var body: some Scene {
         WindowGroup {
@@ -11,9 +12,11 @@ struct DoomScrollApp: App {
                 if UserProfile.load() == nil {
                     OnboardingView()
                         .environmentObject(authManager)
+                        .environmentObject(subscriptionManager)
                 } else {
                     DashboardView()
                         .environmentObject(authManager)
+                        .environmentObject(subscriptionManager)
                 }
             } else {
                 AuthorizationView()

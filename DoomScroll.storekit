@@ -1,0 +1,110 @@
+{
+  "identifier" : "DoomScroll",
+  "nonConsumableProducts" : [],
+  "consumableProducts" : [],
+  "nonRenewingSubscriptionProducts" : [],
+  "autoRenewableSubscriptionGroups" : [
+    {
+      "id" : "doomscroll_premium",
+      "localizations" : [
+        {
+          "locale" : "en_US",
+          "displayName" : "DoomScroll Premium",
+          "description" : "Full access to DoomScroll friction and family features."
+        }
+      ],
+      "autoRenewableSubscriptionProducts" : [
+        {
+          "referenceName" : "Individual Monthly",
+          "productID" : "com.doomscroll.individual.monthly",
+          "isFamilyShareable" : false,
+          "groupLevel" : 4,
+          "recurringSubscriptionPeriod" : "P1M",
+          "introductoryOffer" : {
+            "type" : "FreeTrial",
+            "duration" : "P14D",
+            "eligibilityCheck" : "subscription_group"
+          },
+          "localizations" : [
+            {
+              "locale" : "en_US",
+              "displayName" : "Individual Monthly",
+              "description" : "Full DoomScroll access, billed monthly."
+            }
+          ],
+          "displayPrice" : "6.99",
+          "referenceName_" : "Individual Monthly"
+        },
+        {
+          "referenceName" : "Individual Annual",
+          "productID" : "com.doomscroll.individual.annual",
+          "isFamilyShareable" : false,
+          "groupLevel" : 3,
+          "recurringSubscriptionPeriod" : "P1Y",
+          "introductoryOffer" : {
+            "type" : "FreeTrial",
+            "duration" : "P14D",
+            "eligibilityCheck" : "subscription_group"
+          },
+          "localizations" : [
+            {
+              "locale" : "en_US",
+              "displayName" : "Individual Annual",
+              "description" : "Full DoomScroll access, billed annually. ~$4.17/month."
+            }
+          ],
+          "displayPrice" : "49.99"
+        },
+        {
+          "referenceName" : "Family Monthly",
+          "productID" : "com.doomscroll.family.monthly",
+          "isFamilyShareable" : true,
+          "groupLevel" : 2,
+          "recurringSubscriptionPeriod" : "P1M",
+          "introductoryOffer" : {
+            "type" : "FreeTrial",
+            "duration" : "P14D",
+            "eligibilityCheck" : "subscription_group"
+          },
+          "localizations" : [
+            {
+              "locale" : "en_US",
+              "displayName" : "Family Monthly",
+              "description" : "DoomScroll for the whole family (up to 6), billed monthly."
+            }
+          ],
+          "displayPrice" : "12.99"
+        },
+        {
+          "referenceName" : "Family Annual",
+          "productID" : "com.doomscroll.family.annual",
+          "isFamilyShareable" : true,
+          "groupLevel" : 1,
+          "recurringSubscriptionPeriod" : "P1Y",
+          "introductoryOffer" : {
+            "type" : "FreeTrial",
+            "duration" : "P14D",
+            "eligibilityCheck" : "subscription_group"
+          },
+          "localizations" : [
+            {
+              "locale" : "en_US",
+              "displayName" : "Family Annual",
+              "description" : "DoomScroll for the whole family (up to 6), billed annually. ~$7.50/month."
+            }
+          ],
+          "displayPrice" : "89.99"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 2,
+    "minor" : 0
+  },
+  "storefront" : "USA",
+  "settings" : {
+    "_locale" : "en_US",
+    "_timeRate" : "MONTHLY_RENEWAL_EVERY_30_MINUTES"
+  }
+}
