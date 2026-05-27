@@ -1,0 +1,82 @@
+name: DoomScroll
+options:
+  bundleIdPrefix: com.doomscroll
+  deploymentTarget:
+    iOS: "18.0"
+  groupSortPosition: top
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    DEVELOPMENT_TEAM: "" # Fill in your Apple Developer Team ID
+
+targets:
+  DoomScroll:
+    type: application
+    platform: iOS
+    sources:
+      - DoomScroll
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.doomscroll.app
+        INFOPLIST_FILE: DoomScroll/Info.plist
+    entitlements:
+      path: DoomScroll/DoomScroll.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.doomscroll
+    dependencies:
+      - target: ShieldConfigurationExtension
+      - target: ShieldActionExtension
+      - target: DeviceActivityMonitorExtension
+
+  ShieldConfigurationExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - ShieldConfigurationExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.doomscroll.app.ShieldConfiguration
+        INFOPLIST_FILE: ShieldConfigurationExtension/Info.plist
+    entitlements:
+      path: ShieldConfigurationExtension/ShieldConfiguration.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.doomscroll
+
+  ShieldActionExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - ShieldActionExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.doomscroll.app.ShieldAction
+        INFOPLIST_FILE: ShieldActionExtension/Info.plist
+    entitlements:
+      path: ShieldActionExtension/ShieldAction.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.doomscroll
+
+  DeviceActivityMonitorExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - DeviceActivityMonitorExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.doomscroll.app.DeviceActivityMonitor
+        INFOPLIST_FILE: DeviceActivityMonitorExtension/Info.plist
+    entitlements:
+      path: DeviceActivityMonitorExtension/DeviceActivityMonitor.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - group.com.doomscroll
