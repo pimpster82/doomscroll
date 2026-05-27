@@ -8,10 +8,16 @@ import Foundation
 class ShieldConfigurationExtension: ShieldConfigurationDataSource {
 
     override func configuration(shielding application: Application) -> ShieldConfiguration {
+        let appName = application.localizedDisplayName ?? "this app"
+
+        // Focus mode takes priority — show a different message when a session is active.
+        if isFocusModeActive() {
+            return focusModeConfiguration(blockedAppName: appName)
+        }
+
         let tokenString = application.token?.description ?? ""
         let state = ShieldConversationState.load(for: tokenString)
         let profile = UserProfile.load()
-        let appName = application.localizedDisplayName ?? "this app"
         let overridesLeft = OverrideTracker.remainingToday(for: tokenString)
 
         return configuration(step: state.step, appName: appName, profile: profile,
@@ -128,6 +134,51 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
             primaryButtonLabel: ShieldConfiguration.Label(text: "Start 15-min session", color: .white),
             primaryButtonBackgroundColor: .dsShieldCommit,
             secondaryButtonLabel: ShieldConfiguration.Label(text: "Stay closed", color: .dsTextSecondary)
+        )
+    }
+
+    // MARK: - Focus mode configuration
+
+    private func isFocusModeActive() -> Bool {
+        SharedDefaults.store.bool(forKey: SharedDefaults.Key.focusModeActive)
+    }
+
+    // Shield shown for any blocked app during an active focus session.
+    // Tone is entirely different: not about addiction, but protecting intentional focus.
+    private func focusModeConfiguration(blockedAppName: String) -> ShieldConfiguration {
+        let focusApp = SharedDefaults.store.string(forKey: SharedDefaults.Key.focusAppName) ?? "your focus"
+        let endTimestamp = SharedDefaults.store.double(forKey: SharedDefaults.Key.focusEndTimestamp)
+        let remaining: String = {
+            guard endTimestamp > 0 else { return "" }
+            let secs = max(0, endTimestamp - Date().timeIntervalSince1970)
+            let m = Int(secs) / 60
+            if m > 60 { return "\(m / 60)h \(m % 60)m left" }
+            return "\(m) min left"
+        }()
+
+        return ShieldConfiguration(
+            backgroundBlurStyle: .systemMaterialDark,
+            backgroundColor: .dsShieldBg,
+            icon: UIImage(systemName: "target"),
+            title: ShieldConfiguration.Label(
+                text: "You're in focus mode.",
+                color: .white
+            ),
+            subtitle: ShieldConfiguration.Label(
+                text: remaining.isEmpty
+                    ? "Go back to \(focusApp)."
+                    : "\(remaining). Go back to \(focusApp).",
+                color: .dsTextSecondary
+            ),
+            primaryButtonLabel: ShieldConfiguration.Label(
+                text: "Back to \(focusApp)",
+                color: .white
+            ),
+            primaryButtonBackgroundColor: UIColor(hex: "1E3A28"),   // DS shield-commit green
+            secondaryButtonLabel: ShieldConfiguration.Label(
+                text: "End focus session",
+                color: .dsTextSecondary
+            )
         )
     }
 

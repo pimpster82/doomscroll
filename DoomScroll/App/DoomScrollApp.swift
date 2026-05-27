@@ -5,6 +5,7 @@ import FamilyControls
 struct DoomScrollApp: App {
     @StateObject private var authManager = AuthorizationManager()
     @StateObject private var subscriptionManager = SubscriptionManager.shared
+    @StateObject private var focusManager = FocusModeManager.shared
 
     var body: some Scene {
         WindowGroup {
@@ -17,6 +18,7 @@ struct DoomScrollApp: App {
                     DashboardView()
                         .environmentObject(authManager)
                         .environmentObject(subscriptionManager)
+                        .environmentObject(focusManager)
                 }
             } else {
                 AuthorizationView()

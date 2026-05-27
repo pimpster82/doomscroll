@@ -5,11 +5,13 @@ import FamilyControls
 struct DashboardView: View {
     @EnvironmentObject var authManager: AuthorizationManager
     @EnvironmentObject var subscriptionManager: SubscriptionManager
+    @EnvironmentObject var focusManager: FocusModeManager
     @State private var impact: LifetimeImpact?
     @State private var showAppPicker = false
     @State private var selection = FamilyActivitySelection()
     @State private var showLifetimeStats = false
     @State private var showPaywall = false
+    @State private var showFocusMode = false
     @State private var mascotExpression: SquareEyesExpression = .idle
     @State private var streak = 3   // TODO: persist and increment from DeviceActivity
 
@@ -31,6 +33,10 @@ struct DashboardView: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.lg) {
                         mascotHeader
+                        // Active focus session sits at the top when running.
+                        if focusManager.activeSession != nil {
+                            ActiveFocusView()
+                        }
                         heroMetricCard
                         streakCard
                         if showLifetimeStats { lifetimeCard }
@@ -45,6 +51,12 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showPaywall) {
             NavigationStack { PaywallView() }
+        }
+        .sheet(isPresented: $showFocusMode) {
+            NavigationStack {
+                FocusModeView(existingSelection: selection)
+                    .environmentObject(focusManager)
+            }
         }
     }
 
@@ -242,8 +254,23 @@ struct DashboardView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                if focusManager.activeSession == nil {
+                    showFocusMode = true
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: focusManager.activeSession != nil ? "target" : "target")
+                        .foregroundStyle(focusManager.activeSession != nil ? DS.Color.success : DS.Color.teal)
+                    Text(focusManager.activeSession != nil ? "Focusing" : "Focus")
+                        .font(DS.Font.callout)
+                        .foregroundStyle(focusManager.activeSession != nil ? DS.Color.success : DS.Color.teal)
+                }
+            }
+        }
         ToolbarItem(placement: .topBarTrailing) {
-            NavigationLink(destination: SettingsView()) {
+            NavigationLink(destination: SettingsView().environmentObject(subscriptionManager)) {
                 Image(systemName: "gearshape")
                     .foregroundStyle(DS.Color.textSecondary)
             }
