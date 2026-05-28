@@ -189,22 +189,24 @@ struct DashboardView: View {
                     .padding([.top, .horizontal], DS.Spacing.md)
 
                 if let impact {
-                    HStack(spacing: DS.Spacing.xl) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(String(format: "%.1f yrs", impact.yearsAtCurrentRate))
-                                .font(DS.Font.hero)
-                                .foregroundStyle(DS.Color.warning)
-                            Text("at current rate")
-                                .font(DS.Font.caption)
-                                .foregroundStyle(DS.Color.textSecondary)
+                    // ViewThatFits picks HStack on wide screens (iPhone 14+) and
+                    // falls back to VStack on narrow screens (iPhone SE, 375 pt).
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: DS.Spacing.xl) {
+                            lifetimeStat(value: impact.yearsAtCurrentRate,
+                                         label: "at current rate",
+                                         color: DS.Color.warning)
+                            lifetimeStat(value: impact.yearsRecoverableAt50Percent,
+                                         label: "recoverable at −50%",
+                                         color: DS.Color.success)
                         }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(String(format: "%.1f yrs", impact.yearsRecoverableAt50Percent))
-                                .font(DS.Font.hero)
-                                .foregroundStyle(DS.Color.success)
-                            Text("recoverable at −50%")
-                                .font(DS.Font.caption)
-                                .foregroundStyle(DS.Color.textSecondary)
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            lifetimeStat(value: impact.yearsAtCurrentRate,
+                                         label: "at current rate",
+                                         color: DS.Color.warning)
+                            lifetimeStat(value: impact.yearsRecoverableAt50Percent,
+                                         label: "recoverable at −50%",
+                                         color: DS.Color.success)
                         }
                     }
                     .padding([.horizontal, .bottom], DS.Spacing.md)
@@ -281,6 +283,19 @@ struct DashboardView: View {
     }
 
     // MARK: - Helpers
+
+    private func lifetimeStat(value: Double, label: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(String(format: "%.1f yrs", value))
+                .font(DS.Font.hero)
+                .foregroundStyle(color)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+            Text(label)
+                .font(DS.Font.caption)
+                .foregroundStyle(DS.Color.textSecondary)
+        }
+    }
 
     private var reclaimedFraction: CGFloat {
         // Placeholder until DeviceActivity usage tracking is implemented (TODO #25).
