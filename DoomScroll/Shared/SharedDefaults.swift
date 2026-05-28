@@ -8,10 +8,11 @@ import WidgetKit
 enum SharedDefaults {
     static let suiteName = "group.com.doomscroll"
 
-    // Cached once; allocating a new UserDefaults on every access is wasteful.
+    // `var` rather than `let` so unit tests can inject a clean, non-App-Group
+    // UserDefaults before each test. Production code never reassigns this.
     // Falls back to .standard (with an assertionFailure in debug) if the App Group
     // entitlement is misconfigured so extensions fail loudly during development.
-    static let store: UserDefaults = {
+    static var store: UserDefaults = {
         guard let defaults = UserDefaults(suiteName: suiteName) else {
             assertionFailure("App Group '\(suiteName)' not configured in entitlements")
             return .standard

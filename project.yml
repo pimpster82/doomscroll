@@ -92,6 +92,22 @@ targets:
         com.apple.security.application-groups:
           - group.com.doomscroll
 
+  DoomScrollTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - DoomScrollTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.doomscroll.tests
+        # Host the tests inside the app process so @testable import DoomScroll works
+        # and all linked frameworks (DeviceActivity etc.) are available.
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/DoomScroll.app/DoomScroll
+        BUNDLE_LOADER: $(TEST_HOST)
+    dependencies:
+      - target: DoomScroll
+        embed: false
+
   DeviceActivityMonitorExtension:
     type: app-extension
     platform: iOS
