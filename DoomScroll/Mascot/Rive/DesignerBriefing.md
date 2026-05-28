@@ -32,6 +32,7 @@ Add it to the **DoomScroll** target only (not the widget or extension targets).
 | Input name | Type | Purpose |
 |---|---|---|
 | `Mood` | **Number** | Selects which mood state is active (see values below) |
+| `Season` | **Number** | Activates a seasonal layer (0 = none, see table below) |
 | `React` | **Trigger** | One-shot: plays a reaction clip, then returns to current mood |
 
 The names are **case-sensitive** and must match exactly. The Swift code references them as string literals.
@@ -72,6 +73,29 @@ Use the **Any State** shortcut in Rive's graph to avoid wiring 42 individual arr
 
 ---
 
+## Seasonal layers
+
+The `Season` number input activates a decorative layer on top of the base character.
+Each season is a self-contained layer/group inside the artboard — it doesn't affect the character's shape or animations, it just adds accessories, particles, or colour overlays.
+
+| `Season` value | Theme | Ideas |
+|---|---|---|
+| 0 | None | Layer hidden |
+| 1 | Winter ❄️ | Falling snowflakes, cold-blue tint, Santa hat on head |
+| 2 | Halloween 🎃 | Bat particles, pumpkin nearby, orange iris tint |
+| 3 | Spring 🌸 | Drifting petals, warm pink blush overlay |
+| 4 | World Cup ⚽ | Bouncing football, shorts/kit strip, confetti |
+
+**Implementation approach:**
+1. Create one group/layer per season inside the artboard.
+2. Add a transition in the state machine: from **Any State**, condition `Season == N` → show the matching group, hide all others.
+3. `Season == 0` hides every seasonal group.
+4. The user can disable seasonal layers from the app Settings ("Seasonal Fits" toggle) — Swift will send `Season = 0` when the toggle is off, regardless of the current date.
+
+**Additive rule:** Seasonal layers must not reposition, resize, or recolour anything that belongs to the base character. They are always additive — they sit on top and can be removed cleanly.
+
+---
+
 ## React trigger
 
 The `React` input is a one-shot **Trigger**.  
@@ -95,10 +119,13 @@ When `animated: false` is passed (WidgetKit, accessibility reduced-motion), the 
 
 ## Asset naming checklist for handoff
 
-- [ ] Artboard named exactly `Mascot`  
-- [ ] State machine named exactly `MoodMachine`  
-- [ ] Number input named exactly `Mood`  
-- [ ] Trigger input named exactly `React`  
-- [ ] Seven Animation State nodes with names matching the table above  
-- [ ] First frame of the artboard shows a neutral / idle pose  
+- [ ] Artboard named exactly `Mascot`
+- [ ] State machine named exactly `MoodMachine`
+- [ ] Number input named exactly `Mood`
+- [ ] Number input named exactly `Season`
+- [ ] Trigger input named exactly `React`
+- [ ] Seven mood Animation State nodes with names matching the Mood table above
+- [ ] Four seasonal layer groups: Winter (1), Halloween (2), Spring (3), WorldCup (4)
+- [ ] `Season == 0` hides all seasonal layers
+- [ ] First frame of the artboard shows a neutral idle pose with no seasonal layer
 - [ ] File exported as `square_eyes.riv`

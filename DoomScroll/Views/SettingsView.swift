@@ -6,6 +6,9 @@ struct SettingsView: View {
     @State private var saved = false
     @State private var showPaywall = false
 
+    @AppStorage(SharedDefaults.Key.seasonalFitEnabled, store: SharedDefaults.store)
+    private var seasonalFitEnabled = true
+
     private let currentYear = Calendar.current.component(.year, from: Date())
 
     var body: some View {
@@ -14,6 +17,7 @@ struct SettingsView: View {
 
             List {
                 profileSection
+                mascotSection
                 subscriptionSection
                 aboutSection
             }
@@ -71,6 +75,29 @@ struct SettingsView: View {
             .foregroundStyle(DS.Color.accent)
         } header: {
             SectionLabel(text: "Your profile")
+        }
+    }
+
+    private var mascotSection: some View {
+        Section {
+            Toggle(isOn: $seasonalFitEnabled) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Seasonal Fits")
+                        .foregroundStyle(DS.Color.textPrimary)
+                    Group {
+                        if let theme = SeasonalTheme.current {
+                            Text("\(theme.emoji) \(theme.displayName) is active")
+                        } else {
+                            Text("No theme active right now")
+                        }
+                    }
+                    .font(DS.Font.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                }
+            }
+            .tint(DS.Color.accent)
+        } header: {
+            SectionLabel(text: "Square Eyes")
         }
     }
 

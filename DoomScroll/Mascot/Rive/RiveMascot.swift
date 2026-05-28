@@ -5,24 +5,23 @@ import RiveRuntime
 //
 // Drop-in MascotStyle implementation powered by a Rive (.riv) file.
 //
-// Slot it in with one line in DoomScrollApp:
+// Activate in DoomScrollApp.activeMascot once square_eyes.riv is in the bundle:
 //
 //   private var activeMascot: any MascotStyle {
-//       let base = RiveMascot(fileName: "square_eyes")
-//       if let theme = SeasonalTheme.current {
-//           return SeasonalOverlay(base: base, theme: theme)
-//       }
-//       return base
+//       RiveMascot(
+//           fileName: "square_eyes",
+//           season: SeasonalTheme.current,
+//           seasonEnabled: seasonalFitEnabled
+//       )
 //   }
 //
 // The .riv file must contain:
 //   - Artboard name:       "Mascot"
 //   - State machine name:  "MoodMachine"
-//   - Inputs (see RiveMascot.Input):
-//       "Mood"     — Number  (maps each MascotMood to a Float constant below)
-//       "React"    — Trigger (one-shot for triggerReaction())
-//
-// See DesignerBriefing.md (next to this file) for the full Rive editor spec.
+//   - Inputs (see DesignerBriefing.md):
+//       "Mood"   — Number  (0–6, one per MascotMood)
+//       "Season" — Number  (0 = none, 1 = winter, 2 = halloween, 3 = spring, 4 = world cup)
+//       "React"  — Trigger (one-shot reaction clip)
 
 struct RiveMascot: MascotStyle {
 
@@ -37,6 +36,12 @@ struct RiveMascot: MascotStyle {
     /// State machine name inside the artboard. Default matches the designer spec.
     var stateMachineName: String = "MoodMachine"
 
+    /// Which seasonal layer to show. Pass `SeasonalTheme.current` for auto-detection.
+    var season: SeasonalTheme? = nil
+
+    /// Whether the seasonal layer is shown at all (user toggle: "Seasonal Fits").
+    var seasonEnabled: Bool = true
+
     // MARK: - MascotStyle
 
     func view(mood: MascotMood, size: CGFloat, animated: Bool) -> AnyView {
@@ -46,6 +51,7 @@ struct RiveMascot: MascotStyle {
                 artboardName: artboardName,
                 stateMachineName: stateMachineName,
                 mood: mood,
+                season: seasonEnabled ? season : nil,
                 size: size,
                 animated: animated
             )
@@ -69,17 +75,16 @@ extension Notification.Name {
 
 private enum RiveInput {
     /// Number input: controls which mood state the mascot is in.
-    static let mood  = "Mood"
+    static let mood   = "Mood"
+    /// Number input: 0 = no season, 1–4 = winter/halloween/spring/worldCup.
+    static let season = "Season"
     /// Trigger input: fires a one-shot reaction animation then returns to current mood.
-    static let react = "React"
+    static let react  = "React"
 }
 
 // MARK: - Mood → Float mapping
 //
-// The designer creates numbered states in the MoodMachine driven by the "Mood" number
-// input.  Each MascotMood maps to a distinct float so the state machine can transition
-// with conditions like "Mood == 0 → Idle", "Mood == 1 → Happy", etc.
-// Keep these values in sync with the Rive editor (see DesignerBriefing.md).
+// Keep in sync with DesignerBriefing.md and the Rive state machine.
 
 private extension MascotMood {
     var riveValue: Float {
@@ -105,13 +110,14 @@ private struct RiveMascotView: View {
     let artboardName: String
     let stateMachineName: String
     let mood: MascotMood
+    let season: SeasonalTheme?
     let size: CGFloat
     let animated: Bool
 
     // Each combination of (fileName, artboardName, stateMachineName) gets its own
-    // StateObject. Because SwiftUI re-uses the same view struct for all mood updates,
-    // the single @StateObject persists across mood changes and we drive transitions
-    // purely through setInput / triggerInput — no re-initialisation needed.
+    // StateObject. Because SwiftUI re-uses the same view struct for all mood/season
+    // updates, the single @StateObject persists and we drive transitions purely
+    // through setInput / triggerInput — no re-initialisation needed.
     @StateObject private var viewModel: RiveMascotViewModel
 
     init(
@@ -119,6 +125,7 @@ private struct RiveMascotView: View {
         artboardName: String,
         stateMachineName: String,
         mood: MascotMood,
+        season: SeasonalTheme?,
         size: CGFloat,
         animated: Bool
     ) {
@@ -126,6 +133,7 @@ private struct RiveMascotView: View {
         self.artboardName = artboardName
         self.stateMachineName = stateMachineName
         self.mood = mood
+        self.season = season
         self.size = size
         self.animated = animated
 
@@ -144,13 +152,17 @@ private struct RiveMascotView: View {
             .view()
             // Size the canvas to a square; Rive's .fit(.contain) keeps aspect ratio.
             .frame(width: size, height: size)
-            // Push the initial mood as soon as the view appears.
+            // Push initial state as soon as the view appears.
             .onAppear {
-                viewModel.apply(mood: mood, animated: animated)
+                viewModel.apply(mood: mood, season: season, animated: animated)
             }
-            // React whenever the parent changes the mood prop.
+            // React to mood changes from the parent.
             .onChange(of: mood) { newMood in
-                viewModel.apply(mood: newMood, animated: animated)
+                viewModel.apply(mood: newMood, season: season, animated: animated)
+            }
+            // React to season toggle from settings or date rollover.
+            .onChange(of: season) { newSeason in
+                viewModel.apply(mood: mood, season: newSeason, animated: animated)
             }
             // Broadcast trigger from MascotStyle.triggerReaction().
             .onReceive(NotificationCenter.default.publisher(for: .riveMascotReact)) { _ in
@@ -162,8 +174,8 @@ private struct RiveMascotView: View {
 
 // MARK: - RiveMascotViewModel
 
-/// ObservableObject wrapper so that the RiveViewModel (which is itself an
-/// ObservableObject) survives SwiftUI view identity changes without being recreated.
+/// ObservableObject wrapper so that the RiveViewModel survives SwiftUI view
+/// identity changes without being recreated.
 @MainActor
 private final class RiveMascotViewModel: ObservableObject {
 
@@ -180,21 +192,17 @@ private final class RiveMascotViewModel: ObservableObject {
         )
     }
 
-    /// Push the current mood into the state machine.
-    /// When `animated` is false (WidgetKit snapshot) we skip all input calls so
-    /// the runtime renders the first frame of the artboard without advancing.
-    func apply(mood: MascotMood, animated: Bool) {
-        guard animated else {
-            // For static snapshots we want the character frozen.
-            // The RiveViewModel was already created with autoPlay: false, so
-            // no additional call is required — the first artboard frame is shown.
-            return
-        }
-        riveVM.setInput(RiveInput.mood, value: mood.riveValue)
+    /// Push mood and season into the state machine.
+    /// When `animated` is false (WidgetKit snapshot) all input calls are skipped;
+    /// the runtime shows the first frame of the artboard (neutral idle pose).
+    func apply(mood: MascotMood, season: SeasonalTheme?, animated: Bool) {
+        guard animated else { return }
+        riveVM.setInput(RiveInput.mood,   value: mood.riveValue)
+        riveVM.setInput(RiveInput.season, value: season?.riveValue ?? 0)
     }
 
-    /// Fire the one-shot Trigger input so the character plays a short reaction
-    /// clip and then automatically returns to the current mood state.
+    /// Fire the one-shot Trigger input. The character plays a reaction clip
+    /// then automatically returns to the current mood state.
     func react() {
         riveVM.triggerInput(RiveInput.react)
     }

@@ -36,6 +36,8 @@ enum SharedDefaults {
         static let bestStreak         = "bestStreak"
         // Onboarding gate — true once the user has seen and dismissed the paywall
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
+        // Mascot seasonal layer — user can toggle off in Settings
+        static let seasonalFitEnabled = "seasonalFitEnabled"
     }
 
     // Writes the widget snapshot. Call from the main app whenever stats change.

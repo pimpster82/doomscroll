@@ -62,34 +62,19 @@ struct MascotView: View {
     }
 }
 
-// MARK: - Seasonal decorator
-
-// Wraps any base mascot with a seasonal overlay layered on top.
-// The overlay is purely additive — it never touches the base character's internals.
-struct SeasonalOverlay: MascotStyle {
-    let base: any MascotStyle
-    let theme: SeasonalTheme
-
-    func view(mood: MascotMood, size: CGFloat, animated: Bool) -> AnyView {
-        AnyView(
-            ZStack {
-                base.view(mood: mood, size: size, animated: animated)
-                theme.overlayView(size: size, animated: animated)
-            }
-        )
-    }
-
-    func triggerReaction() { base.triggerReaction() }
-}
-
 // MARK: - Seasonal themes
+//
+// Seasonal layers live entirely inside the .riv file.
+// Swift sends a Season number input; Rive shows/hides the matching layer.
+// Add new cases here + the corresponding layer in the Rive artboard.
 
 enum SeasonalTheme: CaseIterable {
-    case winter     // Snowflake + Santa hat, cool iris tint
-    case halloween  // Pumpkin accessory, orange iris tint, bat particles
-    case spring     // Floating flower petals, warm blush boost
+    case winter     // Dec–Jan: snow, cold-toned accessories
+    case halloween  // Oct 15–31: pumpkin, bats, orange tint
+    case spring     // Mar 20 – Apr: petals, warm blush
+    case worldCup   // Jun–Jul: football, national colours
 
-    // Returns the active theme based on today's date, or nil when no theme applies.
+    // Returns the active theme based on today's date, or nil when none applies.
     static var current: SeasonalTheme? {
         let cal   = Calendar.current
         let month = cal.component(.month, from: Date())
@@ -98,51 +83,37 @@ enum SeasonalTheme: CaseIterable {
         case (12, _), (1, 1...6):    return .winter
         case (10, 15...31):          return .halloween
         case (3, 20...31), (4, _):   return .spring
+        case (6, _), (7, 1...15):    return .worldCup
         default:                     return nil
         }
     }
 
-    @ViewBuilder
-    func overlayView(size: CGFloat, animated: Bool) -> some View {
+    // Sent as the "Season" Number input to the Rive state machine.
+    // 0 is reserved for "no season" (nil). Keep in sync with DesignerBriefing.md.
+    var riveValue: Float {
         switch self {
-        case .winter:    WinterOverlayView(size: size, animated: animated)
-        case .halloween: HalloweenOverlayView(size: size, animated: animated)
-        case .spring:    SpringOverlayView(size: size, animated: animated)
+        case .winter:   return 1
+        case .halloween: return 2
+        case .spring:   return 3
+        case .worldCup: return 4
         }
     }
-}
 
-// MARK: - Seasonal overlay stubs
-// Each is a self-contained View. Replace bodies with real particle/accessory art.
-
-struct WinterOverlayView: View {
-    let size: CGFloat
-    let animated: Bool
-    var body: some View {
-        Image(systemName: "snowflake")
-            .font(.system(size: size * 0.24, weight: .light))
-            .foregroundStyle(.white.opacity(0.92))
-            .shadow(color: .cyan.opacity(0.6), radius: 4)
-            .offset(x: size * 0.18, y: -size * 0.64)
+    var displayName: String {
+        switch self {
+        case .winter:   return "Winter"
+        case .halloween: return "Halloween"
+        case .spring:   return "Spring"
+        case .worldCup: return "World Cup"
+        }
     }
-}
 
-struct HalloweenOverlayView: View {
-    let size: CGFloat
-    let animated: Bool
-    var body: some View {
-        Text("🎃")
-            .font(.system(size: size * 0.26))
-            .offset(x: size * 0.14, y: -size * 0.62)
-    }
-}
-
-struct SpringOverlayView: View {
-    let size: CGFloat
-    let animated: Bool
-    var body: some View {
-        Text("🌸")
-            .font(.system(size: size * 0.22))
-            .offset(x: size * 0.16, y: -size * 0.62)
+    var emoji: String {
+        switch self {
+        case .winter:   return "❄️"
+        case .halloween: return "🎃"
+        case .spring:   return "🌸"
+        case .worldCup: return "⚽"
+        }
     }
 }

@@ -35,12 +35,17 @@ struct DoomScrollApp: App {
         .preferredColorScheme(.light)
     }
 
+    // Persisted in the App Group store so extensions can read it if needed.
+    // Defaults true (seasonal layer on).
+    @AppStorage(SharedDefaults.Key.seasonalFitEnabled, store: SharedDefaults.store)
+    private var seasonalFitEnabled = true
+
     private var activeMascot: any MascotStyle {
-        let base = SquareEyesMascot()
-        if let theme = SeasonalTheme.current {
-            return SeasonalOverlay(base: base, theme: theme)
-        }
-        return base
+        // Switch to RiveMascot once square_eyes.riv is in the bundle:
+        // return RiveMascot(fileName: "square_eyes",
+        //                   season: SeasonalTheme.current,
+        //                   seasonEnabled: seasonalFitEnabled)
+        return SquareEyesMascot()
     }
 }
 
