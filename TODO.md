@@ -44,9 +44,8 @@ Write a plain-language policy covering: birth year (age range), gender, screen-t
 2. Add a `privacy-policy.md` (convert to HTML for the URL)
 3. The URL format will be: `https://pimpster82.github.io/doomscroll/privacy-policy`
 
-**6b — ⬜ Wire the URL into the app (code — do after 6a)**
-- Add `NSPrivacyPolicyURL` key to `DoomScroll/Info.plist` pointing to the hosted URL
-- Add a tappable "Privacy Policy" link in `SettingsView.aboutSection`
+**6b — ✅ Wire the URL into the app**
+Added `NSPrivacyPolicyURL` to `DoomScroll/Info.plist` and a tappable `Link("Privacy Policy", ...)` in `SettingsView.aboutSection`. Both point to `https://pimpster82.github.io/doomscroll/privacy-policy`. Complete manual step 6a to host the policy at that URL.
 
 ---
 
@@ -65,10 +64,8 @@ Fixed in commit `f296a83` — `attemptOverride()` atomic function; ShieldActionE
 ### ✅ 11. Fix `refreshEntitlements` race with product loading
 Fixed in commit `f296a83` — `if products.isEmpty { await loadProducts() }` guard added.
 
-### ⬜ 12. Fix iPhone SE layout — lifetime card overflow
-**File:** `DoomScroll/Views/DashboardView.swift`
-
-Two 56pt bold numbers side-by-side overflow on 375pt (iPhone SE) screens. Change the `HStack` in `lifetimeCard` to a `VStack`.
+### ✅ 12. Fix iPhone SE layout — lifetime card overflow
+Fixed in commit `6abcf56` — `ViewThatFits` wraps the two lifetime stats into HStack (wide) / VStack (narrow).
 
 ### ✅ 13. Change `armv7` to `arm64` in Info.plist
 Fixed in commit `f296a83`.
@@ -85,10 +82,8 @@ Fixed in commit `f296a83`.
 ### ✅ 15. Wire up SharedDefaults.updateWidgetSnapshot()
 Fixed in commit `f296a83` — called from `DashboardView.onAppear` and `OverrideTracker.recordOverride`.
 
-### ⬜ 16. Initiate StoreKit trial at end of onboarding
-**File:** `DoomScroll/Views/OnboardingView.swift`
-
-`finishOnboarding()` calls `AppBlocker.apply()` but never starts a StoreKit purchase, so `hasActiveAccess` is `false` immediately after onboarding. Show `PaywallView` as the final onboarding step (after the summary screen) so the 14-day trial starts before the user hits any gate.
+### ✅ 16. Initiate StoreKit trial at end of onboarding
+Fixed — `finishOnboarding()` now sets `showPaywall = true`; PaywallView sheet appears after the summary step. `AuthorizationManager.markOnboardingComplete()` is called on sheet dismiss so the `hasCompletedOnboarding` flag gates the Dashboard transition. Manual test: TESTING.md §2.
 
 ### ✅ 17. Remove shields when subscription lapses
 Fixed in commit `f296a83` — `AppBlocker.removeAll()` called in `refreshEntitlements` when `activeSubscription == nil`.
@@ -96,10 +91,8 @@ Fixed in commit `f296a83` — `AppBlocker.removeAll()` called in `refreshEntitle
 ### ✅ 18. Fix PaywallView feature copy
 Fixed in commit `f296a83` — "FamilyControls — unkillable" → "System-level blocking — apps can't override it".
 
-### ⬜ 19. Show trial eligibility on paywall CTA
-**File:** `DoomScroll/Subscriptions/PaywallView.swift`
-
-Check `product.subscription?.introductoryOffer` eligibility. Users who already used the trial see "Start 14-day free trial" but aren't eligible — misleading and risks App Store rejection. Fall back to "Subscribe — [price]/[period]" for ineligible users.
+### ✅ 19. Show trial eligibility on paywall CTA
+Fixed — `.task(id: selectedProductID)` calls `product.subscription?.isEligibleForIntroOffer`; CTA changes to "Subscribe — $X.XX" and header drops "14 days free" when ineligible. Manual test: TESTING.md §8.10–8.11.
 
 ### ✅ 20. Fix DeviceActivitySchedule end time
 Fixed in commit `f296a83` — `intervalEnd: DateComponents(hour: 23, minute: 59, second: 59)`.
@@ -117,10 +110,8 @@ Birth year + gender stored in plaintext in the App Group plist — exposed via u
 ### ✅ 23. Fix SharedDefaults.store — remove force unwrap, cache the instance
 Fixed in commit `f296a83` — `static let store` with `assertionFailure` fallback.
 
-### ⬜ 24. Fix calendar-year age arithmetic
-**File:** `DoomScroll/Models/UserProfile.swift`
-
-`Calendar.current.component(.year, from: Date()) - birthYear` is off by up to 1 year (gives the age the user turns this calendar year, not their actual current age). Document the known approximation or collect birth month for better accuracy.
+### ✅ 24. Fix calendar-year age arithmetic
+Fixed — `UserProfile.currentAge` now uses `Calendar.dateComponents([.year], from:to:)` with birth date approximated as January 1 of `birthYear`. Accurate to within 0–364 days; sufficient for age-group bucketing.
 
 ---
 

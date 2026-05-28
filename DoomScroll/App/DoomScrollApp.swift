@@ -10,7 +10,7 @@ struct DoomScrollApp: App {
     var body: some Scene {
         WindowGroup {
             if authManager.isAuthorized {
-                if UserProfile.load() == nil {
+                if UserProfile.load() == nil || !authManager.hasCompletedOnboarding {
                     OnboardingView()
                         .environmentObject(authManager)
                         .environmentObject(subscriptionManager)
@@ -35,8 +35,10 @@ struct DoomScrollApp: App {
 class AuthorizationManager: ObservableObject {
     @Published var isAuthorized = false
     @Published var authorizationError: String? = nil
+    @Published var hasCompletedOnboarding: Bool
 
     init() {
+        hasCompletedOnboarding = SharedDefaults.store.bool(forKey: SharedDefaults.Key.hasCompletedOnboarding)
         checkAuthorization()
     }
 
@@ -49,6 +51,11 @@ class AuthorizationManager: ObservableObject {
             isAuthorized = false
             authorizationError = "Screen Time permission was denied. Go to Settings → Screen Time to enable it for DoomScroll."
         }
+    }
+
+    func markOnboardingComplete() {
+        SharedDefaults.store.set(true, forKey: SharedDefaults.Key.hasCompletedOnboarding)
+        hasCompletedOnboarding = true
     }
 
     private func checkAuthorization() {

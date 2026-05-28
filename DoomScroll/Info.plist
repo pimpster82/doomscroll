@@ -22,6 +22,8 @@
     <true/>
     <key>NSFamilyControlsUsageDescription</key>
     <string>DoomScroll uses Screen Time to track your app usage and apply friction when you open selected apps. All data stays on your device.</string>
+    <key>NSPrivacyPolicyURL</key>
+    <string>https://pimpster82.github.io/doomscroll/privacy-policy</string>
     <key>UIApplicationSceneManifest</key>
     <dict>
         <key>UIApplicationSupportsMultipleScenes</key>

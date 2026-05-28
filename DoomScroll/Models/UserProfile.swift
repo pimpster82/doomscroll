@@ -18,8 +18,7 @@ struct UserProfile: Codable {
     }
 
     var ageGroup: AgeGroup {
-        let age = Calendar.current.component(.year, from: Date()) - birthYear
-        switch age {
+        switch currentAge {
         case ..<19: return .teen
         case 19..<36: return .youngAdult
         default: return .midLife
@@ -31,8 +30,14 @@ struct UserProfile: Codable {
     }
 
     var yearsRemaining: Double {
-        let currentAge = Double(Calendar.current.component(.year, from: Date()) - birthYear)
-        return max(0, Double(lifeExpectancy) - currentAge)
+        max(0, Double(lifeExpectancy) - Double(currentAge))
+    }
+
+    // Approximates birth date as January 1 of birthYear since we only collect the year,
+    // not month/day. Accurate to within 0–364 days — sufficient for age-group bucketing.
+    private var currentAge: Int {
+        let birthDate = Calendar.current.date(from: DateComponents(year: birthYear)) ?? Date()
+        return Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? 0
     }
 }
 

@@ -34,6 +34,8 @@ enum SharedDefaults {
         static let lastStreakDate     = "lastStreakDate"
         static let streakBrokenToday  = "streakBrokenToday"
         static let bestStreak         = "bestStreak"
+        // Onboarding gate — true once the user has seen and dismissed the paywall
+        static let hasCompletedOnboarding = "hasCompletedOnboarding"
     }
 
     // Writes the widget snapshot. Call from the main app whenever stats change.

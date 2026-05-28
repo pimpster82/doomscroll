@@ -13,6 +13,7 @@ struct PaywallView: View {
     @State private var isPurchasing = false
     @State private var errorMessage: String? = nil
     @State private var mascotExpression: SquareEyesExpression = .idle
+    @State private var isEligibleForTrial = true
 
     enum Tier { case individual, family }
     enum Period { case monthly, annual }
@@ -35,6 +36,11 @@ struct PaywallView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .task(id: selectedProductID) {
+            guard let product = selectedProduct,
+                  let info = product.subscription else { return }
+            isEligibleForTrial = await info.isEligibleForIntroOffer
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Restore") {
@@ -58,7 +64,9 @@ struct PaywallView: View {
                 .foregroundStyle(DS.Color.textPrimary)
                 .multilineTextAlignment(.center)
 
-            Text("14 days free, then choose your plan. Cancel anytime.")
+            Text(isEligibleForTrial
+                 ? "14 days free, then choose your plan. Cancel anytime."
+                 : "Choose your plan. Cancel anytime.")
                 .font(DS.Font.callout)
                 .foregroundStyle(DS.Color.textSecondary)
                 .multilineTextAlignment(.center)
@@ -212,7 +220,10 @@ struct PaywallView: View {
                     if isPurchasing {
                         ProgressView().tint(.white)
                     } else {
-                        Text("Start 14-day free trial")
+                        let label = isEligibleForTrial
+                            ? "Start 14-day free trial"
+                            : "Subscribe — \(selectedProduct?.displayPrice ?? "")"
+                        Text(label)
                             .font(DS.Font.headline)
                     }
                 }

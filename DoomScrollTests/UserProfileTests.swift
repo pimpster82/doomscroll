@@ -50,7 +50,8 @@ final class UserProfileTests: XCTestCase {
     }
 
     func testYearsRemainingApproximation() {
-        // Calendar-year arithmetic: off by up to 1 year depending on birth month (known issue #24).
+        // Birth date is approximated as January 1 of birthYear (we only collect the year).
+        // Result is exact for a Jan 1 birthday; up to 364 days off for a Dec 31 birthday.
         let p = UserProfile(birthYear: currentYear - 30, gender: .male, lifeExpectancy: 82)
         XCTAssertEqual(p.yearsRemaining, 52, accuracy: 1.0)
     }

@@ -113,6 +113,9 @@ struct SettingsView: View {
         Section {
             LabeledContent("Version", value: "1.0")
                 .foregroundStyle(DS.Color.textPrimary)
+            Link("Privacy Policy",
+                 destination: URL(string: "https://pimpster82.github.io/doomscroll/privacy-policy")!)
+                .foregroundStyle(DS.Color.accent)
         } header: {
             SectionLabel(text: "About")
         }

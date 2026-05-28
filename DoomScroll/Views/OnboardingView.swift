@@ -10,6 +10,7 @@ struct OnboardingView: View {
     @State private var selection = FamilyActivitySelection()
     @State private var step = 0
     @State private var mascotExpression: SquareEyesExpression = .idle
+    @State private var showPaywall = false
 
     private let currentYear = Calendar.current.component(.year, from: Date())
 
@@ -201,6 +202,9 @@ struct OnboardingView: View {
             DSPrimaryButton(label: "Start my 14-day trial") { finishOnboarding() }
         }
         .padding(DS.Spacing.xl)
+        .sheet(isPresented: $showPaywall, onDismiss: { authManager.markOnboardingComplete() }) {
+            NavigationStack { PaywallView() }
+        }
     }
 
     // MARK: - Components
@@ -248,6 +252,7 @@ struct OnboardingView: View {
         profile.save()
         AppBlocker.apply(selection: selection)
         ActivityMonitorScheduler.startMonitoring(shieldedApps: selection.applications)
+        showPaywall = true
     }
 }
 

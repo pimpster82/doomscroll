@@ -47,8 +47,10 @@ FamilyControls, ManagedSettings, DeviceActivity, and WidgetKit cannot be tested 
 |---|---|---|
 | 2.1 | Complete onboarding: enter birth year, select gender | Profile saved, onboarding advances |
 | 2.2 | Select apps to restrict via picker | Apps appear in managed-apps list |
-| 2.3 | Complete final onboarding step | Paywall (or Dashboard if grace period implemented) appears |
-| 2.4 | Kill app and reopen | Dashboard shown (not onboarding again) |
+| 2.3 | Tap "Start my 14-day trial" on summary step | PaywallView sheet appears |
+| 2.4 | Dismiss paywall (tap anywhere or cancel) without purchasing | Dashboard shown — `hasCompletedOnboarding = true` |
+| 2.5 | Kill app and reopen | Dashboard shown (not onboarding again) |
+| 2.6 | Complete purchase in paywall during onboarding | Dashboard shown, `hasActiveAccess = true` |
 
 ---
 
@@ -145,6 +147,8 @@ Run these using the StoreKit sandbox. Make sure `DoomScroll.storekit` is selecte
 | 8.7 | Complete sandbox purchase | Paywall dismisses, `hasActiveAccess = true`, app usable |
 | 8.8 | Tap "Restore" | Purchases restored if previously purchased |
 | 8.9 | Cancel purchase mid-flow | Paywall stays open, no error shown |
+| 8.10 | Open paywall after previously using a free trial (sandbox: refund then reopen) | CTA reads "Subscribe — $X.XX" not "Start 14-day free trial"; subtitle omits "14 days free" |
+| 8.11 | Open paywall with no prior trial | CTA reads "Start 14-day free trial"; subtitle includes "14 days free" |
 
 ---
 
