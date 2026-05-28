@@ -8,17 +8,8 @@ import SwiftUI
 // All geometry is SwiftUI primitives — no image assets needed.
 // Drive `expression` to animate state transitions.
 
-enum SquareEyesExpression: Equatable {
-    case idle           // Half-open, slightly sleepy
-    case happy          // Curved arc eyes, cheek blush, small arms raised
-    case concerned      // Wide eyes, small iris shifted up, eyebrows
-    case sleepy         // Very squished eyes, barely-visible iris
-    case proud          // Full bright eyes, enlarged iris
-    case disappointed   // Downward gaze, drooping lids
-}
-
 struct SquareEyesView: View {
-    var expression: SquareEyesExpression = .idle
+    var expression: MascotMood = .idle
     var size: CGFloat = 120    // Width; height is 1.16× width
     var animated: Bool = true  // false for WidgetKit snapshots
 
@@ -38,6 +29,7 @@ struct SquareEyesView: View {
         switch expression {
         case .idle:          return blinkOpen ? 0.65 : 0.05
         case .happy:         return 0.8
+        case .celebrating:   return 1.0
         case .concerned:     return 1.0
         case .sleepy:        return blinkOpen ? 0.22 : 0.05
         case .proud:         return 1.0
@@ -49,6 +41,7 @@ struct SquareEyesView: View {
         switch expression {
         case .idle:         return 0.85
         case .happy:        return 0.0   // replaced by arc
+        case .celebrating:  return 0.0   // replaced by arc
         case .concerned:    return 0.6
         case .sleepy:       return 0.3
         case .proud:        return 1.1
@@ -65,7 +58,7 @@ struct SquareEyesView: View {
     }
 
     private var showCheeks: Bool {
-        expression == .happy || expression == .proud
+        expression == .happy || expression == .proud || expression == .celebrating
     }
 
     private var showEyebrows: Bool {
@@ -73,7 +66,7 @@ struct SquareEyesView: View {
     }
 
     private var showHappyArc: Bool {
-        expression == .happy || expression == .proud
+        expression == .happy || expression == .proud || expression == .celebrating
     }
 
     var body: some View {
@@ -92,7 +85,7 @@ struct SquareEyesView: View {
             .offset(y: height * 0.46 + breathingOffset)
 
             // Arms (visible in happy/proud)
-            if expression == .happy || expression == .proud {
+            if expression == .happy || expression == .proud || expression == .celebrating {
                 HStack(spacing: size * 1.0) {
                     arm(angle: -25)
                     arm(angle: 25)

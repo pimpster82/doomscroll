@@ -12,7 +12,7 @@ struct PaywallView: View {
     @State private var selectedPeriod: Period = .annual
     @State private var isPurchasing = false
     @State private var errorMessage: String? = nil
-    @State private var mascotExpression: SquareEyesExpression = .idle
+    @State private var mascotMood: MascotMood = .idle
     @State private var isEligibleForTrial = true
 
     enum Tier { case individual, family }
@@ -56,7 +56,7 @@ struct PaywallView: View {
 
     private var header: some View {
         VStack(spacing: DS.Spacing.md) {
-            SquareEyesView(expression: mascotExpression, size: 100)
+            MascotView(mood: mascotMood, size: 100)
                 .padding(.top, DS.Spacing.sm)
 
             Text("You're in control now.")
@@ -291,7 +291,7 @@ struct PaywallView: View {
             let result = try await manager.purchase(product)
             switch result {
             case .success:
-                mascotExpression = .happy
+                mascotMood = .happy
                 dismiss()
             case .cancelled:
                 break
@@ -300,11 +300,11 @@ struct PaywallView: View {
             }
         } catch {
             errorMessage = "Something went wrong. Please try again."
-            mascotExpression = .concerned
+            mascotMood = .concerned
         }
     }
 
     private func updateMascot() {
-        mascotExpression = selectedTier == .family ? .happy : .idle
+        mascotMood = selectedTier == .family ? .happy : .idle
     }
 }

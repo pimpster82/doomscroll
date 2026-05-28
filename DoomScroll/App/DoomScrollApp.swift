@@ -9,25 +9,38 @@ struct DoomScrollApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if authManager.isAuthorized {
-                if UserProfile.load() == nil || !authManager.hasCompletedOnboarding {
-                    OnboardingView()
-                        .environmentObject(authManager)
-                        .environmentObject(subscriptionManager)
+            Group {
+                if authManager.isAuthorized {
+                    if UserProfile.load() == nil || !authManager.hasCompletedOnboarding {
+                        OnboardingView()
+                            .environmentObject(authManager)
+                            .environmentObject(subscriptionManager)
+                    } else {
+                        DashboardView()
+                            .environmentObject(authManager)
+                            .environmentObject(subscriptionManager)
+                            .environmentObject(focusManager)
+                    }
                 } else {
-                    DashboardView()
+                    AuthorizationView()
                         .environmentObject(authManager)
-                        .environmentObject(subscriptionManager)
-                        .environmentObject(focusManager)
                 }
-            } else {
-                AuthorizationView()
-                    .environmentObject(authManager)
             }
+            // Single injection point for the mascot. Swap activeMascot to change
+            // the character or add a seasonal overlay globally.
+            .mascot(activeMascot)
         }
         // All DS colors are fixed hex values with no dark-adaptive variants.
         // Force light mode until dark-adaptive Color tokens are added to DesignSystem.
         .preferredColorScheme(.light)
+    }
+
+    private var activeMascot: any MascotStyle {
+        let base = SquareEyesMascot()
+        if let theme = SeasonalTheme.current {
+            return SeasonalOverlay(base: base, theme: theme)
+        }
+        return base
     }
 }
 

@@ -82,6 +82,9 @@ targets:
       - path: DoomScroll/Shared/SharedDefaults.swift
       - path: DoomScroll/Models/UserProfile.swift
       - path: DoomScroll/Models/OverrideTracker.swift
+      # Mascot slot system — MascotMood type used in widget entry
+      - path: DoomScroll/Mascot/MascotKit.swift
+      - path: DoomScroll/Mascot/SquareEyes/SquareEyesMascot.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.doomscroll.app.Widget

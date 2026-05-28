@@ -9,7 +9,7 @@ struct OnboardingView: View {
     @State private var showAppPicker = false
     @State private var selection = FamilyActivitySelection()
     @State private var step = 0
-    @State private var mascotExpression: SquareEyesExpression = .idle
+    @State private var mascotMood: MascotMood = .idle
     @State private var showPaywall = false
 
     private let currentYear = Calendar.current.component(.year, from: Date())
@@ -56,7 +56,7 @@ struct OnboardingView: View {
 
             HStack {
                 Spacer()
-                SquareEyesView(expression: .concerned, size: 110)
+                MascotView(mood: .concerned, size: 110)
                 Spacer()
             }
 
@@ -88,7 +88,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             Spacer()
 
-            mascotRow(expression: mascotExpression,
+            mascotRow(mood: mascotMood,
                       text: "This stays on your device. It helps me speak to you like a person, not an app.")
 
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
@@ -137,7 +137,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             Spacer()
 
-            mascotRow(expression: .idle,
+            mascotRow(mood: .idle,
                       text: "Which apps do you want to slow down? You can still open them — you'll just have to mean it.")
 
             Button {
@@ -177,7 +177,7 @@ struct OnboardingView: View {
 
             HStack {
                 Spacer()
-                SquareEyesView(expression: .proud, size: 100)
+                MascotView(mood: .proud, size: 100)
                 Spacer()
             }
 
@@ -209,9 +209,9 @@ struct OnboardingView: View {
 
     // MARK: - Components
 
-    private func mascotRow(expression: SquareEyesExpression, text: String) -> some View {
+    private func mascotRow(mood: MascotMood, text: String) -> some View {
         HStack(alignment: .top, spacing: DS.Spacing.md) {
-            SquareEyesView(expression: expression, size: 56)
+            MascotView(mood: mood, size: 56)
             Text(text)
                 .font(DS.Font.callout)
                 .foregroundStyle(DS.Color.textSecondary)
@@ -240,10 +240,10 @@ struct OnboardingView: View {
 
     // MARK: - Actions
 
-    private func advance(to newStep: Int, mascot: SquareEyesExpression) {
+    private func advance(to newStep: Int, mascot: MascotMood) {
         withAnimation {
             step = newStep
-            mascotExpression = mascot
+            mascotMood = mascot
         }
     }
 

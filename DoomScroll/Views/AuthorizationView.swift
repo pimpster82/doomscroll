@@ -10,7 +10,7 @@ struct AuthorizationView: View {
             VStack(spacing: DS.Spacing.xl) {
                 Spacer()
 
-                SquareEyesView(expression: .concerned, size: 120)
+                MascotView(mood: .concerned, size: 120)
 
                 VStack(spacing: DS.Spacing.md) {
                     Text("One permission to get started")

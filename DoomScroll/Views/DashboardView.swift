@@ -12,7 +12,7 @@ struct DashboardView: View {
     @State private var showLifetimeStats = false
     @State private var showPaywall = false
     @State private var showFocusMode = false
-    @State private var mascotExpression: SquareEyesExpression = .idle
+    @State private var mascotMood: MascotMood = .idle
     @State private var streak = 0
     @State private var bestStreak = 0
 
@@ -71,7 +71,7 @@ struct DashboardView: View {
     // Research: Duolingo increased DAU 34% by placing character at emotional peaks.
     private var mascotHeader: some View {
         HStack(spacing: DS.Spacing.md) {
-            SquareEyesView(expression: mascotExpression, size: 64)
+            MascotView(mood: mascotMood, size: 64)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(greeting)
@@ -335,11 +335,11 @@ struct DashboardView: View {
 
     private func updateMascot() {
         if streak > 5 {
-            mascotExpression = .proud
+            mascotMood = .proud
         } else if streak > 0 {
-            mascotExpression = .happy
+            mascotMood = .happy
         } else {
-            mascotExpression = .idle
+            mascotMood = .idle
         }
     }
 }

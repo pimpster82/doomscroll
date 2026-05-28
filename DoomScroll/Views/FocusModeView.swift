@@ -14,7 +14,7 @@ struct FocusModeView: View {
     @State private var selectedDuration: FocusDuration = .standard
     @State private var customMinutes: Double = 30
     @State private var showCustomPicker = false
-    @State private var mascotExpression: SquareEyesExpression = .idle
+    @State private var mascotMood: MascotMood = .idle
 
     // The user's existing managed app selection (friction list) is passed in
     // so FocusModeManager can re-apply it during focus.
@@ -45,7 +45,7 @@ struct FocusModeView: View {
 
     private var mascotIntro: some View {
         HStack(alignment: .top, spacing: DS.Spacing.md) {
-            SquareEyesView(expression: mascotExpression, size: 64)
+            MascotView(mood: mascotMood, size: 64)
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text("Choose one thing to work on.")
                     .font(DS.Font.headline)
@@ -90,7 +90,7 @@ struct FocusModeView: View {
             )
             .onChange(of: focusSelection) { _, newValue in
                 focusAppName = newValue.applications.first.map { _ in "Selected app" } ?? ""
-                withAnimation { mascotExpression = focusAppName.isEmpty ? .idle : .happy }
+                withAnimation { mascotMood = focusAppName.isEmpty ? .idle : .happy }
             }
 
             if !focusAppName.isEmpty {

@@ -13,7 +13,7 @@ struct ActiveFocusView: View {
 
     private var session: FocusSession? { focusManager.activeSession }
 
-    private var mascotExpression: SquareEyesExpression {
+    private var mascotMood: MascotMood {
         guard let s = session else { return .idle }
         if s.progressFraction > 0.9 { return .proud }
         if s.progressFraction > 0.5 { return .happy }
@@ -53,7 +53,7 @@ struct ActiveFocusView: View {
 
             HStack(alignment: .center, spacing: DS.Spacing.xl) {
                 // Mascot reacts to progress.
-                SquareEyesView(expression: mascotExpression, size: 72)
+                MascotView(mood: mascotMood, size: 72)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     Text(session.focusAppName)
@@ -116,7 +116,7 @@ struct ActiveFocusView: View {
 
         return VStack(alignment: .leading, spacing: DS.Spacing.md) {
             HStack(spacing: DS.Spacing.md) {
-                SquareEyesView(expression: .concerned, size: 52)
+                MascotView(mood: .concerned, size: 52)
                 Text(earlyExitStep == 0 ? prompt.impactLine : prompt.reflectionQuestion)
                     .font(DS.Font.callout)
                     .foregroundStyle(DS.Color.textPrimary)

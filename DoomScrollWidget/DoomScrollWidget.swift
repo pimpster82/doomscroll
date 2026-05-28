@@ -5,7 +5,7 @@ import SwiftUI
 
 struct DoomScrollEntry: TimelineEntry {
     let date: Date
-    let expression: SquareEyesExpression
+    let expression: MascotMood
     let streak: Int
     let reclaimedPercent: Int      // 0–100
     let overridesLeftTotal: Int    // across all managed apps
@@ -48,7 +48,7 @@ struct DoomScrollProvider: TimelineProvider {
             }
         }()
 
-        let expression: SquareEyesExpression = {
+        let expression: MascotMood = {
             if streak > 6  { return .proud }
             if streak > 2  { return .happy }
             if reclaimed > 70 { return .happy }
