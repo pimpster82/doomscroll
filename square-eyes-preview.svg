@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" width="720" height="420">
+  <defs>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; }
+    </style>
+
+    <!-- Shared mascot body clip -->
+    <clipPath id="eyeL-idle">    <rect x="0" y="0" width="34" height="34" rx="8"/> </clipPath>
+    <clipPath id="eyeR-idle">    <rect x="0" y="0" width="34" height="34" rx="8"/> </clipPath>
+
+    <!-- Glow for iris -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="720" height="420" fill="#FDF5EB" rx="16"/>
+
+  <!-- ═══════════════════════════════════════════════════
+       Row 1: idle | happy | concerned
+       ═══════════════════════════════════════════════════ -->
+
+  <!-- ── IDLE ── cx=90, cy=170 -->
+  <g transform="translate(90,150)">
+    <!-- body -->
+    <rect x="-46" y="-60" width="92" height="107" rx="21" fill="#E8F4F0"/>
+    <!-- feet -->
+    <rect x="-29" y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <rect x="7"   y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <!-- eye frames — half-open (scaleY 0.65 → height ~22 of 34) -->
+    <g transform="translate(-28, -14)">
+      <rect x="0" y="5" width="34" height="22" rx="8" fill="#2C3E50"/>
+      <circle cx="17" cy="16" r="10" fill="#4A90D9" filter="url(#glow)"/>
+      <circle cx="21" cy="11" r="3"  fill="white"/>
+    </g>
+    <g transform="translate(6, -14)">
+      <rect x="0" y="5" width="34" height="22" rx="8" fill="#2C3E50"/>
+      <circle cx="17" cy="16" r="10" fill="#4A90D9" filter="url(#glow)"/>
+      <circle cx="21" cy="11" r="3"  fill="white"/>
+    </g>
+    <text x="0" y="78" text-anchor="middle" font-size="12" fill="#7D6B5A">idle</text>
+  </g>
+
+  <!-- ── HAPPY ── cx=280, cy=170 -->
+  <g transform="translate(280,150)">
+    <!-- body -->
+    <rect x="-46" y="-60" width="92" height="107" rx="21" fill="#E8F4F0"/>
+    <!-- feet -->
+    <rect x="-29" y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <rect x="7"   y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <!-- arms raised -->
+    <rect x="-62" y="-12" width="15" height="32" rx="7" fill="#D4EDE7" transform="rotate(-25,-54,4)"/>
+    <rect x="47"  y="-12" width="15" height="32" rx="7" fill="#D4EDE7" transform="rotate(25,54,4)"/>
+    <!-- cheeks -->
+    <circle cx="-30" cy="12" r="10" fill="#F0A07A" opacity="0.55"/>
+    <circle cx="30"  cy="12" r="10" fill="#F0A07A" opacity="0.55"/>
+    <!-- eyes — happy arc (full height) -->
+    <g transform="translate(-28, -14)">
+      <rect x="0" y="0" width="34" height="34" rx="8" fill="#2C3E50"/>
+      <!-- arc iris: upward curve in eye -->
+      <path d="M 8 24 Q 17 10 26 24" stroke="#4A90D9" stroke-width="5" stroke-linecap="round" fill="none"/>
+    </g>
+    <g transform="translate(6, -14)">
+      <rect x="0" y="0" width="34" height="34" rx="8" fill="#2C3E50"/>
+      <path d="M 8 24 Q 17 10 26 24" stroke="#4A90D9" stroke-width="5" stroke-linecap="round" fill="none"/>
+    </g>
+    <text x="0" y="78" text-anchor="middle" font-size="12" fill="#7D6B5A">happy</text>
+  </g>
+
+  <!-- ── CONCERNED ── cx=470, cy=170 -->
+  <g transform="translate(470,150)">
+    <!-- body -->
+    <rect x="-46" y="-60" width="92" height="107" rx="21" fill="#E8F4F0"/>
+    <!-- feet -->
+    <rect x="-29" y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <rect x="7"   y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <!-- eyebrows (tilted inward) -->
+    <rect x="-34" y="-30" width="24" height="4" rx="2" fill="#2C3E50" transform="rotate(-8,-22,-28)"/>
+    <rect x="10"  y="-30" width="24" height="4" rx="2" fill="#2C3E50" transform="rotate(8,22,-28)"/>
+    <!-- eyes — wide open (full height), iris shifted up -->
+    <g transform="translate(-28, -14)">
+      <rect x="0" y="0" width="34" height="34" rx="8" fill="#2C3E50"/>
+      <circle cx="17" cy="12" r="10" fill="#4A90D9" filter="url(#glow)"/>
+      <circle cx="21" cy="8"  r="3"  fill="white"/>
+    </g>
+    <g transform="translate(6, -14)">
+      <rect x="0" y="0" width="34" height="34" rx="8" fill="#2C3E50"/>
+      <circle cx="17" cy="12" r="10" fill="#4A90D9" filter="url(#glow)"/>
+      <circle cx="21" cy="8"  r="3"  fill="white"/>
+    </g>
+    <text x="0" y="78" text-anchor="middle" font-size="12" fill="#7D6B5A">concerned</text>
+  </g>
+
+  <!-- ── SLEEPY ── cx=630, cy=170 -->
+  <g transform="translate(630,150)">
+    <!-- body -->
+    <rect x="-46" y="-60" width="92" height="107" rx="21" fill="#E8F4F0"/>
+    <!-- feet -->
+    <rect x="-29" y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <rect x="7"   y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <!-- eyes — very squished (scaleY 0.22 → height ~7 of 34) -->
+    <g transform="translate(-28, -14)">
+      <rect x="0" y="13" width="34" height="7" rx="4" fill="#2C3E50"/>
+      <circle cx="17" cy="17" r="3" fill="#4A90D9"/>
+    </g>
+    <g transform="translate(6, -14)">
+      <rect x="0" y="13" width="34" height="7" rx="4" fill="#2C3E50"/>
+      <circle cx="17" cy="17" r="3" fill="#4A90D9"/>
+    </g>
+    <text x="0" y="78" text-anchor="middle" font-size="12" fill="#7D6B5A">sleepy</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════
+       Row 2: proud | disappointed — centred
+       ═══════════════════════════════════════════════════ -->
+
+  <!-- ── PROUD ── cx=230, cy=330 -->
+  <g transform="translate(230,310)">
+    <!-- body -->
+    <rect x="-46" y="-60" width="92" height="107" rx="21" fill="#E8F4F0"/>
+    <!-- feet -->
+    <rect x="-29" y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <rect x="7"   y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <!-- arms raised -->
+    <rect x="-62" y="-12" width="15" height="32" rx="7" fill="#D4EDE7" transform="rotate(-25,-54,4)"/>
+    <rect x="47"  y="-12" width="15" height="32" rx="7" fill="#D4EDE7" transform="rotate(25,54,4)"/>
+    <!-- cheeks -->
+    <circle cx="-30" cy="12" r="10" fill="#F0A07A" opacity="0.55"/>
+    <circle cx="30"  cy="12" r="10" fill="#F0A07A" opacity="0.55"/>
+    <!-- eyes — full bright, large iris (scaleY 1.0, irisScale 1.1) -->
+    <g transform="translate(-28, -14)">
+      <rect x="0" y="0" width="34" height="34" rx="8" fill="#2C3E50"/>
+      <path d="M 7 24 Q 17 8 27 24" stroke="#4A90D9" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+    </g>
+    <g transform="translate(6, -14)">
+      <rect x="0" y="0" width="34" height="34" rx="8" fill="#2C3E50"/>
+      <path d="M 7 24 Q 17 8 27 24" stroke="#4A90D9" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+    </g>
+    <text x="0" y="78" text-anchor="middle" font-size="12" fill="#7D6B5A">proud</text>
+  </g>
+
+  <!-- ── DISAPPOINTED ── cx=490, cy=330 -->
+  <g transform="translate(490,310)">
+    <!-- body -->
+    <rect x="-46" y="-60" width="92" height="107" rx="21" fill="#E8F4F0"/>
+    <!-- feet -->
+    <rect x="-29" y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <rect x="7"   y="47"  width="22" height="10" rx="5" fill="#C8B8A8"/>
+    <!-- eyes — half-height, iris shifted down -->
+    <g transform="translate(-28, -14)">
+      <rect x="0" y="8" width="34" height="18" rx="8" fill="#2C3E50"/>
+      <circle cx="17" cy="19" r="8" fill="#4A90D9" filter="url(#glow)"/>
+      <circle cx="21" cy="15" r="2.5" fill="white"/>
+    </g>
+    <g transform="translate(6, -14)">
+      <rect x="0" y="8" width="34" height="18" rx="8" fill="#2C3E50"/>
+      <circle cx="17" cy="19" r="8" fill="#4A90D9" filter="url(#glow)"/>
+      <circle cx="21" cy="15" r="2.5" fill="white"/>
+    </g>
+    <text x="0" y="78" text-anchor="middle" font-size="12" fill="#7D6B5A">disappointed</text>
+  </g>
+
+  <!-- Title -->
+  <text x="360" y="28" text-anchor="middle" font-size="15" font-weight="600" fill="#2C3E50">Square Eyes — all expressions</text>
+</svg>
