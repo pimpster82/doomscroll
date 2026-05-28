@@ -48,7 +48,11 @@ struct DashboardView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
-            .onAppear { loadImpact(); loadStreak(); updateMascot(); pushWidgetSnapshot() }
+            .onAppear {
+                loadImpact(); loadStreak(); updateMascot(); pushWidgetSnapshot()
+                NotificationScheduler.requestPermissionIfNeeded()
+                NotificationScheduler.scheduleDailyCheckIn(streak: streak)
+            }
         }
         .sheet(isPresented: $showPaywall) {
             NavigationStack { PaywallView() }
@@ -315,6 +319,8 @@ struct DashboardView: View {
     private func loadStreak() {
         streak = OverrideTracker.currentStreak()
         bestStreak = OverrideTracker.bestStreak()
+        NotificationScheduler.scheduleStreakMilestoneIfNeeded(streak: streak)
+        if streak == 0 { NotificationScheduler.cancelDailyCheckIn() }
     }
 
     private func pushWidgetSnapshot() {

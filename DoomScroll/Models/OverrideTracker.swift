@@ -92,6 +92,9 @@ struct OverrideTracker {
         }
         SharedDefaults.store.set(today, forKey: SharedDefaults.Key.lastStreakDate)
         SharedDefaults.store.set(false, forKey: SharedDefaults.Key.streakBrokenToday)
+
+        let newCount = SharedDefaults.store.integer(forKey: SharedDefaults.Key.streakCount)
+        NotificationScheduler.scheduleDailyCheckIn(streak: newCount)
     }
 
     static func currentStreak() -> Int {
@@ -103,6 +106,8 @@ struct OverrideTracker {
     }
 
     // Immediate streak reset. Called when all overrides are exhausted for any app.
+    // Note: notification cancellation is handled in DashboardView.loadStreak() since
+    // breakStreak() also runs inside ShieldActionExtension which has no access to this module.
     private static func breakStreak() {
         SharedDefaults.store.set(0,    forKey: SharedDefaults.Key.streakCount)
         SharedDefaults.store.set(true, forKey: SharedDefaults.Key.streakBrokenToday)

@@ -163,15 +163,31 @@ Run these using the StoreKit sandbox. Make sure `DoomScroll.storekit` is selecte
 
 ---
 
-### 10. Edge cases
+### 10. Push notifications
+
+Notification delivery requires a physical device (iOS Simulator doesn't fire local notification alerts reliably).
 
 | # | Step | Expected |
 |---|---|---|
-| 10.1 | Double-tap the primary button rapidly on impact screen | Override recorded exactly once (atomic `attemptOverride`) |
-| 10.2 | Open a shielded app while focus mode is active | Focus shield shown (not the standard override flow) |
-| 10.3 | Subscription lapses (use StoreKit sandbox refund) | Shields removed automatically |
-| 10.4 | Device in dark mode | App forces light mode (all colors correct) |
-| 10.5 | Run on iPhone SE (375 pt width) | Lifetime card stats stack vertically, no overflow |
+| 10.1 | Fresh install → open Dashboard | iOS notification permission dialog appears once |
+| 10.2 | Deny notification permission | No dialog appears again; app continues normally |
+| 10.3 | Reach a 3-day streak | Milestone notification fires immediately: "3-day streak 🔥" |
+| 10.4 | Reach a 7, 14, or 30-day streak | Corresponding milestone notification fires |
+| 10.5 | Any streak > 0 on Dashboard open | A daily check-in notification is scheduled for 9am next day |
+| 10.6 | Override limit exhausted (streak breaks) | Dashboard open → pending check-in notification removed; no notification next morning |
+| 10.7 | Streak = 0 | No check-in notification scheduled |
+
+---
+
+### 11. Edge cases
+
+| # | Step | Expected |
+|---|---|---|
+| 11.1 | Double-tap the primary button rapidly on impact screen | Override recorded exactly once (atomic `attemptOverride`) |
+| 11.2 | Open a shielded app while focus mode is active | Focus shield shown (not the standard override flow) |
+| 11.3 | Subscription lapses (use StoreKit sandbox refund) | Shields removed automatically |
+| 11.4 | Device in dark mode | App forces light mode (all colors correct) |
+| 11.5 | Run on iPhone SE (375 pt width) | Lifetime card stats stack vertically, no overflow |
 
 ---
 

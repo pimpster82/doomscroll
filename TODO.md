@@ -35,8 +35,8 @@ Fixed in commit `f296a83` — `.preferredColorScheme(.light)` added to `WindowGr
 ### ✅ 5. Add required auto-renewal disclosure to PaywallView
 Fixed in commit `f296a83` — full Apple-required disclosure text with dynamic price from `selectedProduct.displayPrice`.
 
-### ⬜ 6. Add a privacy policy and `NSPrivacyPolicyURL`
-**Depends on manual step (6a) before the code can be completed.**
+### 🔧 6. Add a privacy policy and `NSPrivacyPolicyURL`
+**Code (6b) is done. Needs manual step 6a to host the policy at the URL.**
 
 **6a — 🔧 Write and host the privacy policy (manual)**
 Write a plain-language policy covering: birth year (age range), gender, screen-time data — all on-device only, never transmitted, no third parties. Host at a stable URL (GitHub Pages is free and permanent):
@@ -169,8 +169,8 @@ Switch from `.individual` to `.family` authorization for true parental control. 
 ### 28. ✅ Streak persistence
 Done in commit `f296a83` — real streak tracking via `OverrideTracker`, incremented at midnight by DeviceActivityMonitor, reset on override-limit exhaustion.
 
-### 29. Push notifications for streaks and check-ins
-Optional daily check-in + streak milestone notifications via `UNUserNotificationCenter`. Max 1/day, default off, user opts in.
+### ✅ 29. Push notifications for streaks and check-ins
+Done — `NotificationScheduler.swift` added. Requests permission once on first Dashboard open. Schedules milestone notifications at 3/7/14/30-day streaks; daily 9am check-in when streak > 0, cancelled when streak breaks. Manual test: TESTING.md §10.
 
 ### 30. Session time budget selection in the override flow
 Currently hardcoded 15 minutes. Let user choose 15/30/45 min via an additional `.defer` cycle or a local notification to open the main app.
