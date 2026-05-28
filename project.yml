@@ -18,6 +18,11 @@ targets:
     platform: iOS
     sources:
       - DoomScroll
+      # xcprivacy must be bundled as a resource; explicit entry overrides xcodegen's
+      # default handling for file types it doesn't auto-classify as resources.
+      - path: DoomScroll/PrivacyInfo.xcprivacy
+        buildPhase: resources
+        type: file
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.doomscroll.app

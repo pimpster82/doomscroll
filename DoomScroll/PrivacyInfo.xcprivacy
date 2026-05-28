@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- No cross-app or cross-website tracking. -->
+    <key>NSPrivacyTracking</key>
+    <false/>
+
+    <!--
+        Required-reason APIs used by DoomScroll.
+        Declared per Apple's privacy manifest requirements (required since Spring 2024).
+    -->
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <dict>
+            <!-- UserDefaults is used extensively via App Group (group.com.doomscroll)
+                 to share override logs, shield state, streak data, and widget snapshots
+                 across the main app, ShieldAction, ShieldConfiguration, DeviceActivity,
+                 and Widget extensions. -->
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- CA92.1: Access info from the app group container. -->
+                <string>CA92.1</string>
+            </array>
+        </dict>
+    </array>
+
+    <!--
+        Data collected on-device.
+        Neither field is linked to user identity or used for tracking.
+        Both are stored locally only — nothing leaves the device.
+    -->
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array>
+        <!-- Birth year — used to adapt friction messaging by age group and to
+             calculate a lifetime screen-time projection shown only to the user. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeOtherDataTypes</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- Gender — used to select age- and gender-adapted reflection prompts.
+             Maps to "Sensitive Info" per Apple's data-type taxonomy. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeSensitiveInfo</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>
