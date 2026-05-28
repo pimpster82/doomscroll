@@ -1,147 +1,319 @@
-# Square Eyes — Mascot Redesign Spec
+# Square Eyes — Mascot System Spec
+
+## Vision
+
+The mascot is not a component — it is a **slot**. Any view in the app that shows a mascot uses the slot. What sits in the slot can be swapped globally: different character, seasonal skin, A/B variant, special event. Call sites never change.
+
+Seasonal specials (Winter Mode, Halloween, anniversary) are **decorators** layered on top of any base mascot — not separate implementations. A Santa hat works on Square Eyes today and on any future character automatically.
+
+---
 
 ## What's wrong with the current implementation
 
-The current SquareEyes is a flat, lifeless assemblage of rectangles. The specific problems:
+The current SquareEyes is hardwired into every view. The specific problems:
 
-- **No depth.** Uniform mint fill, no shadow, no gradient, no inner glow. Looks like a CSS mockup.
-- **Eyes only.** Expressions rely entirely on eye scale/offset. No mouth, no body language, no weight.
-- **No squash/stretch.** The body never deforms. Every transition is a uniform linear scale.
-- **No follow-through.** Arms snap to position. Nothing settles, overshoots, or jiggles.
-- **Fragile animation.** Timer + DispatchQueue.asyncAfter for blinking is unpredictable, doesn't pause when app backgrounds, and fights with expression transitions.
-- **Tightly coupled.** Adding a new expression requires editing 5+ switch statements. Swapping the art style is a full rewrite.
-- **Magic multipliers everywhere.** `size * 0.28`, `size * 0.59`, `size * 0.23` — no semantic structure, no design tokens.
-
----
-
-## Character brief
-
-**Square Eyes** is the app's emotional core. A pale mint blob whose eyes are literal TV screens — glowing blue, square-bezelled, slightly wrong. They've been staring at screens their whole life and feel the cost of it. But they're not sad: they want to help.
-
-They should feel:
-- **Slightly weary** at rest (not depressed — just a creature that has seen too many feeds)
-- **Genuinely warm** when celebrating (not performed joy — real relief)
-- **Gently alert** when concerned (not panicked — just noticed something)
-- **Irresistibly sleepy** when depleted (heavy eyelids, drooping head)
-
-They should look like they have **weight**, **breath**, and **intention**.
+- **Baked in.** `SquareEyesView` is imported directly at every call site. Swapping the character requires touching every screen.
+- **Flat and lifeless.** Uniform mint fill, no shadow, no gradient, no inner glow.
+- **Eyes only.** No mouth, no body weight, no squash/stretch.
+- **Fragile animation.** Timer + DispatchQueue.asyncAfter for blinking is unpredictable and fights expression transitions.
+- **Tightly coupled expressions.** Adding one new expression means editing 5+ switch statements.
+- **Magic multipliers.** `size * 0.28`, `size * 0.59` everywhere — no semantic structure.
 
 ---
 
-## Technical architecture
+## Architecture: The Mascot Slot System
 
-### Protocol boundary (non-negotiable)
-
-All call sites use this interface and nothing else:
+### Layer 1 — The protocol (in `DoomScroll/Mascot/MascotKit.swift`)
 
 ```swift
-// Public API — must remain stable forever.
-// Internal rendering can be replaced entirely without touching callers.
-struct SquareEyesView: View {
-    var expression: SquareEyesExpression = .idle
+// Everything the app knows about a mascot. Nothing more.
+protocol MascotStyle {
+    // The view the mascot renders for a given emotional state.
+    @ViewBuilder
+    func view(mood: MascotMood, size: CGFloat, animated: Bool) -> any View
+
+    // Optional: called when a significant event happens (override recorded,
+    // session ends). The mascot can react however it likes.
+    func triggerReaction()
+}
+
+// Unified mood vocabulary — richer than the current expression enum,
+// so future characters can interpret moods in their own way.
+enum MascotMood: String, CaseIterable {
+    case idle           // Default resting state
+    case happy          // Positive feedback, streak going
+    case proud          // Achievement milestone
+    case concerned      // Warning / needs attention
+    case sleepy         // Overrides exhausted
+    case disappointed   // Streak broken
+    case celebrating    // Major milestone (30-day streak etc.)
+}
+```
+
+### Layer 2 — Environment injection (one line per screen)
+
+```swift
+// EnvironmentKey so any view can access the current mascot.
+struct MascotStyleKey: EnvironmentKey {
+    static let defaultValue: any MascotStyle = SquareEyesMascot()
+}
+
+extension EnvironmentValues {
+    var mascotStyle: any MascotStyle {
+        get { self[MascotStyleKey.self] }
+        set { self[MascotStyleKey.self] = newValue }
+    }
+}
+
+// Convenience view modifier.
+extension View {
+    func mascot(_ style: any MascotStyle) -> some View {
+        environment(\.mascotStyle, style)
+    }
+}
+```
+
+### Layer 3 — The public slot view (replaces all direct SquareEyesView usage)
+
+```swift
+// This is what every call site uses. Never SquareEyesView directly.
+struct MascotView: View {
+    var mood: MascotMood = .idle
     var size: CGFloat = 120
-    var animated: Bool = true   // false for WidgetKit snapshots
+    var animated: Bool = true
+
+    @Environment(\.mascotStyle) private var style
+
+    var body: some View {
+        AnyView(style.view(mood: mood, size: size, animated: animated))
+    }
 }
-
-enum SquareEyesExpression: String, Equatable, CaseIterable {
-    case idle, happy, concerned, sleepy, proud, disappointed
-}
 ```
 
-### Internal architecture
-
-Separate **what the character communicates** from **how it is drawn**:
-
-```
-SquareEyesView (public shell)
-  └── SquareEyesPose (value type: all geometric state for a given expression)
-        ├── bodyScaleX, bodyScaleY       (squash/stretch)
-        ├── eyeOpenness                  (0 = closed, 1 = fully open)
-        ├── eyeScaleY                    (lids)
-        ├── irisScale, irisOffset        (gaze)
-        ├── mouthCurve                   (−1 frown → 0 neutral → +1 smile)
-        ├── cheekOpacity
-        ├── eyebrowOffset, eyebrowTilt
-        └── armsRaised: Bool
-```
-
-`SquareEyesPose` is a static function of `SquareEyesExpression`. The renderer interpolates between poses using `KeyframeAnimator` or `PhaseAnimator`. The renderer never reads expression directly — it reads pose.
-
-### Geometry: `MascotMetrics` struct
-
-Replace all magic multipliers with one struct:
+### Layer 4 — Concrete mascot: SquareEyesMascot
 
 ```swift
-struct MascotMetrics {
-    let size: CGFloat
+// Lives in DoomScroll/Mascot/SquareEyes/SquareEyesMascot.swift
+// The app knows nothing about this type except that it conforms to MascotStyle.
+final class SquareEyesMascot: MascotStyle {
+    func view(mood: MascotMood, size: CGFloat, animated: Bool) -> any View {
+        SquareEyesRenderer(mood: mood, size: size, animated: animated)
+    }
 
-    var height:      CGFloat { size * 1.2 }
-    var bodyRadius:  CGFloat { size * 0.22 }
-    var eyeSize:     CGFloat { size * 0.28 }
-    var eyeGap:      CGFloat { size * 0.06 }
-    var irisSize:    CGFloat { eyeSize * 0.60 }
-    var eyeRadius:   CGFloat { eyeSize * 0.22 }
-    var footWidth:   CGFloat { size * 0.18 }
-    var footHeight:  CGFloat { size * 0.09 }
-    var footGap:     CGFloat { size * 0.12 }
-    var footOffsetY: CGFloat { height * 0.44 }
-    var armWidth:    CGFloat { size * 0.09 }
-    var armHeight:   CGFloat { size * 0.24 }
-    var cheekRadius: CGFloat { size * 0.14 }
-    var cheekOffX:   CGFloat { size * 0.32 }
-    var mouthWidth:  CGFloat { size * 0.34 }
-    var mouthHeight: CGFloat { size * 0.12 }
-    var eyeOffsetY:  CGFloat { -size * 0.05 }
+    func triggerReaction() {
+        // Post a notification or update @Observable state that
+        // SquareEyesRenderer listens to for the squash/stretch sequence.
+        NotificationCenter.default.post(name: .mascotReactionTriggered, object: nil)
+    }
+}
+```
+
+### Layer 5 — Decorator: SeasonalOverlay
+
+```swift
+// Wraps ANY base mascot. Seasonal content is additive — layered on top.
+// Seasonal overlays never touch the base mascot's internals.
+struct SeasonalOverlay: MascotStyle {
+    let base: any MascotStyle
+    let theme: SeasonalTheme
+
+    func view(mood: MascotMood, size: CGFloat, animated: Bool) -> any View {
+        ZStack {
+            AnyView(base.view(mood: mood, size: size, animated: animated))
+            theme.overlay(size: size, animated: animated)
+        }
+    }
+
+    func triggerReaction() { base.triggerReaction() }
+}
+
+enum SeasonalTheme {
+    case winter         // Snowflake particles, Santa hat, cool color tint on iris
+    case halloween      // Tiny pumpkin accessory, orange iris tint, bat particles
+    case anniversary    // Confetti burst on reaction trigger
+    case spring         // Floating flower petals, warmer cheek blush
+
+    @ViewBuilder
+    func overlay(size: CGFloat, animated: Bool) -> some View {
+        switch self {
+        case .winter:   WinterOverlayView(size: size, animated: animated)
+        case .halloween: HalloweenOverlayView(size: size, animated: animated)
+        case .anniversary: AnniversaryOverlayView(size: size, animated: animated)
+        case .spring:   SpringOverlayView(size: size, animated: animated)
+        }
+    }
+}
+```
+
+### App-level wiring (one place)
+
+```swift
+// In DoomScrollApp.swift — the only place that knows which mascot is active.
+var body: some Scene {
+    WindowGroup {
+        RootView()
+            .mascot(activeMascot)
+    }
+}
+
+private var activeMascot: any MascotStyle {
+    let base = SquareEyesMascot()
+    if let theme = SeasonalTheme.current {   // checks date
+        return SeasonalOverlay(base: base, theme: theme)
+    }
+    return base
 }
 ```
 
 ---
 
-## Expressions — full spec
+## File structure
 
-### idle
-- Eyes: 60% open, iris centered, normal size
-- Body: no deformation
-- Mouth: very slight downward curve (−0.15) — not sad, just resting
-- No cheeks, no arms, no eyebrows
-- *Feeling: a creature that is tired but still here*
+```
+DoomScroll/Mascot/
+  MascotKit.swift               ← protocol, MascotMood, EnvironmentKey, MascotView, SeasonalOverlay
+  SeasonalTheme.swift           ← SeasonalTheme enum, date-range logic, .current computed property
 
-### happy
-- Eyes: arc iris (upward curve, like a ˆ glyph), full eye height
-- Body: very slight squash (scaleY 0.96, scaleX 1.03) — small joyful settle
-- Mouth: gentle smile (0.6)
-- Cheeks: visible (opacity 0.5)
-- Arms: raised at ~25° outward
-- *Feeling: quiet celebration, not a fist-pump*
+  SquareEyes/
+    SquareEyesMascot.swift      ← MascotStyle conformance + triggerReaction
+    SquareEyesRenderer.swift    ← the actual drawing code (currently SquareEyesView.swift)
+    SquareEyesPose.swift        ← pose lookup table (MascotMood → geometry values)
+    MascotMetrics.swift         ← all proportions derived from `size`, no magic multipliers
 
-### concerned
-- Eyes: fully open (scaleY 1.0), iris shifted up 15%, slightly larger iris (1.05×)
-- Body: very slight vertical stretch (scaleY 1.02)
-- Mouth: flat with corners very slightly down (−0.2)
-- Eyebrows: visible, tilted inward (−10° left, +10° right), offset upward
-- *Feeling: noticed something, paying attention*
+  Seasonal/
+    WinterOverlayView.swift     ← snowflakes + hat
+    HalloweenOverlayView.swift  ← pumpkin + bats
+    AnniversaryOverlayView.swift ← confetti
+    SpringOverlayView.swift     ← petals
+```
 
-### sleepy
-- Eyes: 18% open — heavy drooping lids, iris barely visible (scale 0.3)
-- Body: head-droop implied by slight downward offset (+4pt)
-- Mouth: slightly open-neutral (0.1 curve, slightly parted)
-- No cheeks, no arms
-- *Feeling: gravity is winning*
+---
 
-### proud
-- Eyes: arc iris (brighter version), full height, iris glow more saturated
-- Body: slight upward stretch (scaleY 1.04, scaleX 0.97) — standing taller
-- Mouth: full warm smile (0.85)
-- Cheeks: visible (opacity 0.65)
-- Arms: raised higher than happy (~35°), slight outward lean
-- *Feeling: actually did the thing*
+## Call site migration
 
-### disappointed
-- Eyes: 45% open, iris shifted down 12%, iris slightly smaller (0.8×)
-- Body: slight slump (scaleY 0.97)
-- Mouth: soft downward curve (−0.5)
-- Eyebrows: slight inward droop (subtle)
-- *Feeling: was hoping for better*
+Every call site changes from:
+```swift
+SquareEyesView(expression: .happy, size: 64)
+```
+to:
+```swift
+MascotView(mood: .happy, size: 64)
+```
+
+That's the entire migration. No other changes needed at call sites.
+
+**Current call sites to update:**
+
+| File | Current | After |
+|---|---|---|
+| `DashboardView.swift` | `SquareEyesView(expression: mascotExpression, size: 64)` | `MascotView(mood: mascotMood, size: 64)` |
+| `FocusModeView.swift` | `SquareEyesView(expression: mascotExpression, size: 64)` | `MascotView(mood: mascotMood, size: 64)` |
+| `ActiveFocusView.swift` | `SquareEyesView(expression: ..., size: 72)` | `MascotView(mood: ..., size: 72)` |
+| `OnboardingView.swift` | `SquareEyesView(expression: .concerned, size: 110)` | `MascotView(mood: .concerned, size: 110)` |
+| `AuthorizationView.swift` | `SquareEyesView(expression: .concerned, size: 120)` | `MascotView(mood: .concerned, size: 120)` |
+| `PaywallView.swift` | `SquareEyesView(expression: mascotExpression, size: 100)` | `MascotView(mood: mascotMood, size: 100)` |
+| `DoomScrollWidget.swift` | `SquareEyesView(expression: ..., size: 70, animated: false)` | `MascotView(mood: ..., size: 70, animated: false)` |
+
+---
+
+## Adding a future character
+
+To ship an entirely different mascot (e.g., a drawn illustrated character via Rive):
+
+1. Create `RiveMascot.swift` conforming to `MascotStyle`
+2. `view()` returns a `RiveViewModel`-driven SwiftUI view
+3. `triggerReaction()` triggers the Rive state machine event
+4. Change one line in `DoomScrollApp.swift`: `.mascot(RiveMascot())`
+
+Zero changes to any screen or widget.
+
+---
+
+## Adding a seasonal special
+
+1. Add a case to `SeasonalTheme`
+2. Create the overlay view (a `ZStack` of particles/accessories)
+3. Add a date range to `SeasonalTheme.current`
+4. Ship. The overlay wraps whatever mascot is active — Square Eyes, future Rive character, anything.
+
+---
+
+## SquareEyesRenderer redesign (the drawing itself)
+
+See the animation and expression specs below. These apply to `SquareEyesRenderer` only — the slot system is agnostic to how any particular mascot renders itself.
+
+---
+
+## Character brief (Square Eyes)
+
+A pale mint blob whose eyes are literal TV screens — glowing blue, square-bezelled, slightly wrong. They've been staring at screens their whole life and feel the cost of it. But they're not sad: they want to help.
+
+They should feel **weighted**, **breathing**, and **inhabited**.
+
+---
+
+## SquareEyesPose — expression lookup table
+
+Replace all switch statements with one struct per mood:
+
+```swift
+struct SquareEyesPose {
+    var bodyScaleX:    CGFloat = 1.0
+    var bodyScaleY:    CGFloat = 1.0
+    var eyeOpenness:   CGFloat = 1.0    // 0=closed, 1=fully open
+    var irisScale:     CGFloat = 1.0
+    var irisOffsetY:   CGFloat = 0      // fraction of eye size
+    var useHappyArc:   Bool = false
+    var mouthCurve:    CGFloat = 0      // -1 frown → 0 neutral → +1 smile
+    var cheekOpacity:  CGFloat = 0
+    var armsRaised:    Bool = false
+    var eyebrowTilt:   CGFloat = 0      // degrees, applied ±
+
+    static let idle = SquareEyesPose(
+        eyeOpenness: 0.60, mouthCurve: -0.15)
+
+    static let happy = SquareEyesPose(
+        bodyScaleX: 1.03, bodyScaleY: 0.96,
+        eyeOpenness: 1.0, useHappyArc: true,
+        mouthCurve: 0.65, cheekOpacity: 0.5, armsRaised: true)
+
+    static let proud = SquareEyesPose(
+        bodyScaleX: 0.97, bodyScaleY: 1.04,
+        eyeOpenness: 1.0, irisScale: 1.1, useHappyArc: true,
+        mouthCurve: 0.85, cheekOpacity: 0.65, armsRaised: true)
+
+    static let concerned = SquareEyesPose(
+        bodyScaleY: 1.02,
+        eyeOpenness: 1.0, irisScale: 1.05, irisOffsetY: -0.15,
+        mouthCurve: -0.2, eyebrowTilt: 10)
+
+    static let sleepy = SquareEyesPose(
+        eyeOpenness: 0.18, irisScale: 0.3,
+        mouthCurve: 0.05)
+
+    static let disappointed = SquareEyesPose(
+        bodyScaleY: 0.97,
+        eyeOpenness: 0.45, irisScale: 0.8, irisOffsetY: 0.12,
+        mouthCurve: -0.5, eyebrowTilt: 5)
+
+    static let celebrating = SquareEyesPose(
+        bodyScaleX: 1.06, bodyScaleY: 0.92,
+        eyeOpenness: 1.0, irisScale: 1.2, useHappyArc: true,
+        mouthCurve: 1.0, cheekOpacity: 0.8, armsRaised: true)
+
+    static func pose(for mood: MascotMood) -> SquareEyesPose {
+        switch mood {
+        case .idle:         return .idle
+        case .happy:        return .happy
+        case .proud:        return .proud
+        case .concerned:    return .concerned
+        case .sleepy:       return .sleepy
+        case .disappointed: return .disappointed
+        case .celebrating:  return .celebrating
+        }
+    }
+}
+```
 
 ---
 
@@ -149,122 +321,63 @@ struct MascotMetrics {
 
 ### Blink — KeyframeAnimator (replaces Timer + asyncAfter)
 
-Blink on a random cadence using a `@State var blinkTrigger: Int` incremented by a background Timer. Occasionally double-blink (10% chance).
-
 ```
-Keyframe sequence for single blink (total 0.18s):
-  0.00s: scaleY = 1.0
-  0.07s: scaleY = 0.04   (fast close)
-  0.13s: scaleY = 0.04   (hold closed)
-  0.18s: scaleY = 1.0    (slightly slower open)
-
-Double blink adds a second close/open at 0.28–0.42s.
+0.00s: eyeOpenness = current
+0.07s: eyeOpenness = 0.04   (fast close)
+0.13s: eyeOpenness = 0.04   (hold)
+0.18s: eyeOpenness = full   (slightly slower open)
+Occasionally double-blink: repeat close/open at 0.28–0.42s
 ```
 
-### Expression transition — KeyframeAnimator
-
-When `expression` changes, animate all pose fields with coordinated but not identical timing. Body deformation leads, eyes follow 40ms later, mouth follows 80ms later (secondary action).
+### Expression transition — coordinated but offset timing
 
 ```
-Body scale change:  SpringKeyframe, stiffness: 280, damping: 22
-Eye lid change:     SpringKeyframe, stiffness: 350, damping: 28  (eyes are snappy)
-Iris offset:        SpringKeyframe, stiffness: 200, damping: 20  (iris floats)
-Mouth curve:        CubicKeyframe, duration: 0.25s              (mouth melts)
-Arm raise:          SpringKeyframe(bounce: 0.45)                (arms have spring)
+Body scale:     SpringKeyframe, stiffness 280, damping 22
+Eye openness:   SpringKeyframe, stiffness 350, damping 28   (snappy)
+Iris offset:    SpringKeyframe, stiffness 200, damping 20   (floaty)
+Mouth curve:    CubicKeyframe, duration 0.25s               (melts)
+Arm raise:      SpringKeyframe(bounce: 0.45)
 ```
+Body leads, eyes follow 40ms later, mouth follows 80ms later.
 
-### Idle float — TimelineView + sinusoidal offset
+### Idle float — TimelineView
 
 ```swift
-TimelineView(.animation) { timeline in
-    let t = timeline.date.timeIntervalSinceReferenceDate
-    let y = sin(t * 0.8) * 3.5   // primary float: ±3.5pt, 7.9s period
-    let rot = sin(t * 0.5) * 1.2 // subtle tilt: ±1.2°, 12.6s period
-    // Two different frequencies → Lissajous pattern, never exactly repeats
-}
+let y   = sin(t * 0.8) * 3.5   // ±3.5pt, 7.9s period
+let rot = sin(t * 0.5) * 1.2   // ±1.2°, 12.6s period
+// Two frequencies → Lissajous pattern, never exactly repeats
 ```
 
-### Reaction squash/stretch (for significant events)
-
-Triggered externally when override attempt or session ends:
+### Reaction squash/stretch — triggerReaction()
 
 ```
-Phase 1 (impact):     scaleX 1.22, scaleY 0.78  — 0.08s, easeOut
-Phase 2 (overshoot):  scaleX 0.93, scaleY 1.08  — 0.18s, spring bounce:0.5
-Phase 3 (settle):     scaleX 1.00, scaleY 1.00  — 0.25s, spring
+Phase 1 (impact):    scaleX 1.22, scaleY 0.78   0.08s easeOut
+Phase 2 (overshoot): scaleX 0.93, scaleY 1.08   0.18s spring bounce:0.5
+Phase 3 (settle):    scaleX 1.00, scaleY 1.00   0.25s spring
 ```
 
-Expose as: `squareEyesView.triggerReaction()` — a method or a `@Binding<Bool>` that fires the sequence.
+### Iris glow — mood-responsive depth
 
-### Iris glow — mood-responsive
-
-The iris drop shadow shifts with expression:
-- idle: `shadow(color: .blue.opacity(0.3), radius: 4)`
-- concerned: `shadow(color: .orange.opacity(0.5), radius: 7)` — warm amber shift
-- proud/happy: `shadow(color: .blue.opacity(0.7), radius: 8)` — bright saturated
-- sleepy: `shadow(color: .blue.opacity(0.1), radius: 2)` — barely visible
-
-### Mouth shape — Path-based
-
-Draw mouth as a cubic bezier with two control points:
-- Neutral (curve 0): horizontal line, control points on center Y
-- Smile (curve +1): control points lifted → upward arc
-- Frown (curve −1): control points dropped → downward arc
-
-Intermediate values interpolate smoothly. Animate `mouthCurve` through `animatableData` or `KeyframeAnimator`.
+```swift
+.idle:         shadow(color: mascotIris.opacity(0.30), radius: 4)
+.concerned:    shadow(color: Color(hex:"F0A07A").opacity(0.50), radius: 7)  // warm amber
+.happy/.proud: shadow(color: mascotIris.opacity(0.70), radius: 8)           // bright blue
+.sleepy:       shadow(color: mascotIris.opacity(0.10), radius: 2)
+```
 
 ---
 
-## Depth improvements
+## Implementation order
 
-These are small code changes with large visual impact:
-
-1. **Body inner shadow** — A slightly darker version of `mascotBody` as an inner stroke overlay (`Capsule().stroke(Color(hex:"C8E4DC"), lineWidth: 2).blur(radius: 1)`) creates soft dimensionality.
-
-2. **Eye frame depth** — The TV-screen bezel gets a 1pt bottom edge highlight (`Color.white.opacity(0.12)`) to imply a beveled screen edge.
-
-3. **Iris glow** — Already specified above. This is the highest-ROI single change.
-
-4. **Foot shadow** — A small blurred ellipse below each foot (opacity 0.12, blur 3) grounds the character.
-
-5. **Body color variation** — The body could have a very subtle radial gradient from `#EEF7F3` (center highlight) to `#D8EDE6` (edge shadow) to suggest roundness without a texture asset.
-
----
-
-## What cannot be unit-tested
-
-- Blink timing and visual rhythm (must be reviewed on device)
-- Squash/stretch feel (must be reviewed at 60 FPS)
-- Mouth curve shape at intermediate expression values
-- Idle float naturalness
-
-Add manual test cases to TESTING.md for each.
-
----
-
-## Implementation order (recommended)
-
-1. `MascotMetrics` struct — zero visual change, eliminates magic numbers
-2. `SquareEyesPose` value type + static pose lookup — decouples expression from renderer
-3. Mouth bezier path + `mouthCurve` interpolation — highest expressiveness gain
-4. Replace blink Timer with `KeyframeAnimator` — reliability fix
-5. `TimelineView` idle float + subtle rotation — aliveness
-6. Iris glow shift by expression — depth + emotion tie-in
-7. Squash/stretch on expression transitions — Disney principle #1
-8. Reaction trigger method + `triggerReaction()` call sites in DashboardView
-9. Body depth cues (inner shadow, foot shadow, radial gradient)
-10. Eye-tracking toward nearest interactive element (optional stretch)
-
----
-
-## Call sites to update after redesign
-
-| File | Size | Notes |
-|---|---|---|
-| `DashboardView.swift` | 64pt | Wire `triggerReaction()` on override attempt result |
-| `FocusModeView.swift` | 64pt | — |
-| `ActiveFocusView.swift` | 72pt + 52pt | 52pt hardcoded `.concerned` could use `.disappointed` |
-| `OnboardingView.swift` | 110pt + 56pt | Welcome `.concerned` could transition to `.happy` after step 1 |
-| `AuthorizationView.swift` | 120pt | Hardcoded `.concerned` — correct |
-| `PaywallView.swift` | 100pt | Dynamic expression on tier change — correct |
-| `DoomScrollWidget.swift` | 70pt + 80pt | `animated: false` — only pose rendering matters here |
+1. Create `MascotKit.swift` — protocol, `MascotMood`, `EnvironmentKey`, `MascotView`, `SeasonalOverlay` skeleton
+2. Create `SquareEyesMascot.swift` — thin conformance wrapper
+3. Wire into `DoomScrollApp.swift` — single `.mascot(...)` call
+4. Migrate all call sites from `SquareEyesView` → `MascotView` (7 files)
+5. Rename `SquareEyesView.swift` → `SquareEyesRenderer.swift`, make internal
+6. `MascotMetrics.swift` — kill all magic multipliers
+7. `SquareEyesPose.swift` — replace all switch statements
+8. Add mouth bezier path with interpolatable `mouthCurve`
+9. Replace blink Timer with `KeyframeAnimator`
+10. `TimelineView` idle float + iris glow shifts
+11. Squash/stretch `triggerReaction()` + wire into DashboardView
+12. First seasonal overlay: `WinterOverlayView` (snowflakes + hat)
