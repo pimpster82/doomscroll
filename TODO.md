@@ -74,10 +74,12 @@ Fixed in commit `f296a83`.
 
 ## 🟡 MEDIUM — Fix before public launch
 
-### ⬜ 14. Implement DeviceActivityMonitor — wire real usage data
-**File:** `DeviceActivityMonitorExtension/DeviceActivityMonitorExtension.swift`
-
-`eventDidReachThreshold` is still empty. The shield shows "0 min today" because `todaySeconds_<token>` is never written. Implement to write per-app seconds to SharedDefaults so the impact screen shows real numbers.
+### ⬜ 14. Implement real usage data for the impact screen
+**Technical note:** `DeviceActivityMonitor.eventDidReachThreshold` does NOT provide per-app seconds — iOS doesn't expose raw usage time there for privacy reasons. Per-app time must come from `DeviceActivityReport` (a separate privacy-preserving SwiftUI view extension). This requires:
+1. A new `DeviceActivityReportExtension` target (type: `app-extension`, `com.apple.developer.deviceactivity.report`)
+2. A `DeviceActivityResults` context that writes per-app `totalActivityDuration` to SharedDefaults
+3. Presenting the report view in the main app via `DeviceActivityReport` and reading the side-channel write
+This is a medium-complexity but **device-only** change (requires FamilyControls + DeviceActivity entitlements). Cannot be tested in Simulator.
 
 ### ✅ 15. Wire up SharedDefaults.updateWidgetSnapshot()
 Fixed in commit `f296a83` — called from `DashboardView.onAppear` and `OverrideTracker.recordOverride`.
