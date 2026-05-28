@@ -1,4 +1,10 @@
 name: DoomScroll
+
+packages:
+  RiveRuntime:
+    url: https://github.com/rive-app/rive-ios
+    from: "6.0.0"
+
 options:
   bundleIdPrefix: com.doomscroll
   deploymentTarget:
@@ -38,6 +44,7 @@ targets:
       - target: ShieldActionExtension
       - target: DeviceActivityMonitorExtension
       - target: DoomScrollWidget
+      - package: RiveRuntime
 
   ShieldConfigurationExtension:
     type: app-extension
